@@ -9,6 +9,7 @@
 *“不要去造一个企图记住一切的 AI，我们要造一个让 AI 每 5 分钟醒来重新精读图纸的系统。”*
 
 [![OpenClaw Skill](https://img.shields.io/badge/OpenClaw-Skill-blue.svg)](https://github.com/openclaw/openclaw)
+[![ClawHub](https://img.shields.io/badge/ClawHub-Install-ff69b4.svg)](https://clawhub.com/yangwenyu2/agent-memento)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 [English](./README.md) | [简体中文](./README_zh.md)
@@ -32,26 +33,33 @@
 我们用一支**无情、失忆、极短命的 Tick Worker（滴答工人）军队**来取代它。它们活着的唯一目的，就是读同一张实体图纸，去敲下一颗钉子，物理验证，然后赴死（休眠）。
 
 ### ⚙️ 它是怎么工作的？(双态智能分离)
-1. 📂 **大脑外置 (The Externalized Brain)**：Agent 不再依赖 Chat 上下文环境作为回忆池。项目的进度全部剥离下放到物理环境中的 `MASTER_PLAN.md` 里。记忆变成了实体。
-2. 🏛️ **架构师态 (The Architect)**：人类和主控 AI 在普通的 Session 里天马行空地讨论架构，做出调整，然后将大叙事切分为最细颗粒度的 `[ ]` 复选框存入大纲。
-3. 🔨 **泥瓦匠态 (The Tick Worker)**：Cron 每 5 分钟在后台唤醒一个干干净净、没有上下文的新 Agent：
-   - 它会冷酷地读取 `MASTER_PLAN.md`。
-   - 自上而下扫描，找到**第一个还没打钩的 `[ ]`**。
-   - 聚拢 100% 的推理力，只修这一个微小模块。
-   - **铁血防爆纪律**：只允许使用外科手术级别的代码替换（sed 或 AST），绝不覆写全文引起 OOM。
-   - **铁血防幻觉纪律**：必须跑脚本（`npm test` / `curl`）在控制台拿到成功的 `Exit 0` 退出码。拿不到，死也不许给自己打 `[x]` 勾。
-   - 任务结束，沉睡。
 
-### 🕹️ 可观探测流 (无 Prompt 干预法)
+| 模式 | 角色 | 职责 | 记忆力 |
+| :--- | :--- | :--- | :--- |
+| **🏛️ 架构师态** | 你 + 主控 AI | 在日常对话中讨论全局架构，将目标切割并写入 `MASTER_PLAN.md`。 | 无上限 (人类大脑) |
+| **🔨 泥瓦匠态** | Cron 守护进程 | 每 5 分钟在后台唤醒一个没有上下文的新 Agent，只做一件事，证明它管用，然后死掉。 | 5 分钟 (零上下文) |
+
+#### Memento 强制注入的铁血纪律：
+1. **外科手术级防爆 (Surgical Edits)**：只允许使用精确替换（sed 级别），绝不允许覆写全文引起 OOM 崩溃。
+2. **拒绝脑内验算 (Evidence-Based)**：必须在控制台拿到成功的 `Exit 0` 退出码（`npm test` / `curl`）。拿不到，死也不许给自己打 `[x]` 勾。
+3. **拒绝静默空转 (Anti-Ghosting)**：如果卡死，死前必须在 `TICK_STATUS.md` 黑匣子里写下残骸日志。
+
+### 🕹️ 观测级驾驭 (无 Prompt 干预法)
 厌倦了对着聊天框大吼大叫“你刚才写偏了！重写！”？ 
-有了 Memento 机制，干预这个黑盒不再需要 Prompt。你只需要像修改备忘录一样静静地把 `MASTER_PLAN.md` 里的勾去掉或加一句需求。下一个被唤醒的 Tick Worker 会立即遵从这套崭新的宇宙法则，像变道的湍流般顺着你的新图纸奔涌。
+有了 Memento 机制，干预这个黑盒不再需要 Prompt。你只需要像修改备忘录一样静静地把 `MASTER_PLAN.md` 里的勾去掉，或改一句需求。下一个被唤醒的 Tick Worker 会立即遵从这套崭新的宇宙法则，像变道的湍流般顺着你的新图纸奔涌。
 
 ---
 
 ## 🚀 极速部署 (One-Line Scaffold)
 
-在 OpenClaw 生态里撕毁聊天窗流派，用一行代码平地拉起属于你的 Memento 自动化兵工厂：
+在 OpenClaw 生态里撕毁聊天窗流派，平地拉起属于你的 Memento 自动化兵工厂：
 
+### 1. 从 ClawHub 安装
+```bash
+clawhub install agent-memento
+```
+
+### 2. 初始化项目结构
 ```bash
 cd ~/.openclaw/workspace
 bash skills/agent-memento/scripts/init_memento.sh 你的大项目名称
@@ -59,13 +67,23 @@ bash skills/agent-memento/scripts/init_memento.sh 你的大项目名称
 
 它会自动为你完成积木铺设：
 1. 注入 `projects/你的项目/docs/MASTER_PLAN.md`（你的全图景大纲图纸）。
-2. 构建 `TICK_STATUS.md`（如果 Worker 被奇葩 Bug 阻断卡死，死前会在这里把原因写下来给你看）。
-3. 生成一个**开箱即用、装满军规般 System Prompt 的唤醒脚本**： `scripts/你的项目_tick.sh`。
+2. 构建 `TICK_STATUS.md`（死前黑匣子）。
+3. 生成一个**自带军规 System Prompt 的唤醒脚本**： `scripts/你的项目_tick.sh`。
 
-你只需要在 `MASTER_PLAN.md` 里填好你想造什么，然后挂到 crontab 里：
+### 3. 释放自动化洪流
+在 `MASTER_PLAN.md` 里填好你想造什么，然后挂到 crontab 里：
 ```bash
 # 加入 crontab
 */5 * * * * bash /root/.openclaw/workspace/scripts/你的项目_tick.sh
 ```
 
 **然后去睡觉。醒来验收一栋每一块砖都被测试验证过的高塔。**
+
+---
+
+## 🛠 前置依赖
+- 正确安装了 [OpenClaw CLI](https://github.com/openclaw/openclaw)。
+- （强烈建议）项目里最好有测试脚手架 (Jest, PyTest)，让 Worker 能严格遵从证据驱动纪律。
+
+## 📜 License
+MIT License.

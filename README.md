@@ -9,6 +9,7 @@
 *“Don't build AI that tries to remember everything. Build systems that make AI read the blueprint anew every 5 minutes.”*
 
 [![OpenClaw Skill](https://img.shields.io/badge/OpenClaw-Skill-blue.svg)](https://github.com/openclaw/openclaw)
+[![ClawHub](https://img.shields.io/badge/ClawHub-Install-ff69b4.svg)](https://clawhub.com/yangwenyu2/agent-memento)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 [English](./README.md) | [简体中文](./README_zh.md)
@@ -32,26 +33,32 @@ Inspired by the movie *Memento*, we destroy the omniscient, memory-heavy persist
 We replace it with an army of **ruthless, amnesiac, short-lived Tick Workers** that live only to read a physical blueprint, hammer exactly one nail, verify it, and die.
 
 ### ⚙️ How Memento Works (The Dual-Mode Intelligence)
-1. 📂 **The Externalized Brain (`MASTER_PLAN.md`)**: The Agent’s memory isn’t the chat history—it’s a physical Markdown file. The project is hierarchically decomposed. The state is tangible.
-2. 🏛️ **The Architect (You + Chat AI)**: In a normal session, you design the macro-architecture, pivot strategies, and write the checklists into the `MASTER_PLAN`.
-3. 🔨 **The Tick Worker (Cron / Watchdog)**: Every 5 minutes, a background script wakes up a fresh, context-free Agent. 
-   - It reads the `MASTER_PLAN`.
-   - It scans top-to-bottom for the VERY FIRST unchecked `[ ]` task.
-   - It focuses 100% of its compute on that *single* micro-task.
-   - **Crucial Rule (Anti-OOM):** It uses surgical edits (like `sed` or AST tools) instead of rewriting entire files.
-   - **Ironclad Proof (Anti-Hallucination):** It executes physical tests (e.g., `npm test`, `curl`, `puppeteer`). If it doesn't get a strict `Exit 0`, it is **forbidden** from checking off the `[x]`.
-   - It goes back to sleep.
+| Mode | Actor | Role | Memory |
+| :--- | :--- | :--- | :--- |
+| **🏛️ The Architect** | You + Chat AI | Design macro-architecture, pivot strategies, and write checklists into `MASTER_PLAN.md`. | Infinite (Human Brain) |
+| **🔨 The Tick Worker** | Cron / Watchdog | Wakes up every 5 mins, reads the blueprint, executes ONE `[ ]` task, proves it works, and dies. | 5 Minutes (Zero Context) |
+
+#### Three Ironclad Disciplines enforced by Memento:
+1. **Surgical Edits (Anti-OOM)**: Forced to use `sed` or AST parsing instead of rewriting entire files.
+2. **Evidence-Based (Anti-Hallucination)**: Strictly forbidden from checking off `[x]` unless physical proof exists (a passing `jest` test, a returning `curl` 200 OK, etc.).
+3. **Anti-Ghosting (Asynchronous Reporting)**: If stuck, it writes the blocker into a `TICK_STATUS.md` blackbox instead of silently dying.
 
 ### 🕹️ Observable Steering (Zero-Prompt Intervention)
 Tired of yelling at your AI in the chat, *"No! You wrote it wrong again!"*? 
-With Agent Memento, you steer the entire autonomous process simply by editing the text file. Want to pivot the app's entire UI? Just silently change the checkboxes in `MASTER_PLAN.md`. The next Tick Worker will instantly adapt to the new reality like a river changing course.
+With Agent Memento, you steer the entire autonomous process simply by editing a text file. Want to pivot the app's entire UI? Just silently change the checkboxes in `MASTER_PLAN.md`. The next Tick Worker will instantly adapt to the new reality like a river changing course.
 
 ---
 
 ## 🚀 Quick Start (One-Line Scaffold)
 
-Instantly tear down the Chatbot paradigm and spin up an autonomous Memento factory for your next huge repo inside OpenClaw:
+Instantly tear down the Chatbot paradigm and spin up an autonomous Memento factory inside OpenClaw:
 
+### 1. Install from ClawHub
+```bash
+clawhub install agent-memento
+```
+
+### 2. Initialize a Project
 ```bash
 cd ~/.openclaw/workspace
 bash skills/agent-memento/scripts/init_memento.sh MyHugeProject
@@ -60,11 +67,11 @@ bash skills/agent-memento/scripts/init_memento.sh MyHugeProject
 This automagically injects:
 1. `projects/MyHugeProject/docs/MASTER_PLAN.md` (Your physical canvas for global architecture).
 2. `TICK_STATUS.md` (The asynchronous Black Box where dying Workers report their blockers).
-3. A **ready-to-deploy background worker script** at `scripts/MyHugeProject_tick.sh` loaded with the draconian anti-hallucination system prompts.
+3. A **ready-to-deploy background worker script** at `scripts/MyHugeProject_tick.sh` loaded with draconian system prompts.
 
-Write out your plan in `MASTER_PLAN.md`, then unleash the cron:
+### 3. Unleash the Cron
+Write out your plan in `MASTER_PLAN.md`, then add the tick to your system crontab:
 ```bash
-# Add to crontab
 */5 * * * * bash /root/.openclaw/workspace/scripts/MyHugeProject_tick.sh
 ```
 
@@ -73,7 +80,7 @@ Write out your plan in `MASTER_PLAN.md`, then unleash the cron:
 ---
 
 ## 🛠 Prerequisites
-- OpenClaw CLI properly installed.
+- [OpenClaw CLI](https://github.com/openclaw/openclaw) properly installed.
 - (Optional but Recommended) A testing harness (Jest, PyTest, etc.) so the worker can strictly adhere to the Evidence-based standard.
 
 ## 📜 License
