@@ -1,9 +1,22 @@
+
+<div align="center">
+
+<img src="./docs/assets/banner.png" alt="Agent Memento Banner" width="100%">
+
 # 🧠 Agent Memento
 
 **Your AI agent forgets everything every 5 minutes. That's the point.**
 
-A tick-driven autonomous execution framework that turns any LLM into a 
-reliable production factory — by embracing amnesia instead of fighting it.
+A tick-driven autonomous execution framework that turns any LLM into a reliable production factory — by embracing amnesia instead of fighting it.
+
+[![OpenClaw Skill](https://img.shields.io/badge/OpenClaw-Skill-blue.svg)](https://github.com/openclaw/openclaw)
+[![ClawHub](https://img.shields.io/badge/ClawHub-Install-ff69b4.svg)](https://clawhub.com/yangwenyu2/agent-memento)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+[English](./README.md) | [简体中文](./README_zh.md)
+
+</div>
+
 
 > Inspired by the film *Memento*: if you can't form new memories, 
 > tattoo the instructions on your body.

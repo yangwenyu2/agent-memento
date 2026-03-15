@@ -1,8 +1,24 @@
+
+<div align="center">
+
+<img src="./docs/assets/banner.png" alt="Agent Memento Banner" width="100%">
+
 # 🧠 Agent Memento
 
-**让你的 AI 每 5 分钟强行失忆一次。这正是它的精髓。**
+**面向大模型的“记碎式”自动化生产兵工厂**
+
+*“让你的 AI 每 5 分钟强行失忆一次。这正是它的精髓。”*
+
+[![OpenClaw Skill](https://img.shields.io/badge/OpenClaw-Skill-blue.svg)](https://github.com/openclaw/openclaw)
+[![ClawHub](https://img.shields.io/badge/ClawHub-Install-ff69b4.svg)](https://clawhub.com/yangwenyu2/agent-memento)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+[English](./README.md) | [简体中文](./README_zh.md)
+
+</div>
 
 这是一款基于时间跳动（Tick-driven）的自治生产框架，通过拥抱"失忆"，将容易发散的 LLM 从聊天机器人改造成可靠的流水线黑灯工厂。
+
 
 > 灵感来自电影《记忆碎片》：如果你无法形成新的长期记忆，你必须把规矩和蓝图纹在身上。
 
