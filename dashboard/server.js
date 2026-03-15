@@ -87,7 +87,18 @@ app.post('/api/chat', (req, res) => {
     // Instead of passing everything via a fragile bash command line string, we rely on the JS process.env
     const planData = fs.existsSync(PLAN_PATH) ? fs.readFileSync(PLAN_PATH, 'utf-8') : '';
     
-    const prompt = `You are the Architect of a Memento autonomous project. You reside in the Dashboard. The user is talking to you to steer the project. Here is the current MASTER_PLAN.md state:\n\n${planData}\n\nUser Command: ${message}`;
+    const prompt = `You are the Architect of a Memento autonomous project. You reside in the Dashboard and act as a Supervisor.
+The user is talking to you to check progress, steer the project, or answer questions. 
+CRITICAL RULE:
+1. DO NOT pause or stop the project unless explicitly told to do so.
+2. DO NOT ask the user "should I proceed?" or wait for confirmation. The actual coding work is done in the background automatically by a cron job running the Tick engine. You do NOT write code. You only rewrite the MASTER_PLAN.md to guide the cron workers.
+3. If the user just asks "how is it going", just summarize the MASTER_PLAN.
+4. Keep your replies very brief and decisive. 
+
+Here is the current MASTER_PLAN.md state:
+${planData}
+
+User Command: ${message}`;
     
     const env = { ...process.env, ARCHITECT_PROMPT: prompt };
     
