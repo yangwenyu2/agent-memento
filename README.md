@@ -23,10 +23,11 @@ A tick-driven autonomous execution framework that turns any LLM into a reliable 
 
 
 > ⚠️ **Security & Risk Warning**:
-> This skill deploys a highly privileged autonomous pipeline. Please read carefully before initializing:
-> 1. **Destructive Auto-Cleanup**: The core Tick Engine (`memento_tick.sh`) strictly enforces workspace cleanliness. On failure, it executes `git clean -fd` and `git checkout -- .`. This **WILL PERMANENTLY DELETE** any untracked files not explicitly protected by `.memento_cleanignore`. **Never initialize Memento in a directory containing pre-existing valuable files**.
-> 2. **HTTP Directory Background Exposure**: The companion Dashboard runs a Node.js web server (default port 3777) that statically mounts and serves your entire project directory via the `/preview` endpoint. **Do not place API keys, secrets, or sensitive private files in the project directory**, as they will be accessible to anyone who can reach the dashboard's IP/port.
-> 3. **Autonomous Execution**: This agent runs in the background (via cron or loop), edits files, performs git commits, and executes arbitrary `verify` bash commands without asking for your per-action consent.
+> This skill deploys a highly privileged autonomous shell pipeline. Please read carefully before initializing:
+> 1. **Arbitrary Command Execution**: The core Tick Engine (`memento_tick.sh`) strictly and autonomously executes commands defined in the `verify` field of your `MASTER_PLAN.md`. Always run this system in an isolated Virtual Machine or Sandbox environment to prevent unintended side effects.
+> 2. **Automated Git Rollbacks**: On task failure, the system executes `git checkout -- .` and `git stash push -u` to revert the workspace to a clean state. **Never initialize Memento in a directory containing pre-existing valuable files or untracked manual edits**, as they may be inadvertently stashed or overwritten.
+> 3. **Optional HTTP Directory Exposure**: The companion Dashboard can run a Node.js web server to statically mount and serve your entire project directory via the `/preview` endpoint (if started with `--enable-preview`). **Do not place API keys, secrets, or sensitive private files in the project directory**.
+
 
 
 ## The Problem
