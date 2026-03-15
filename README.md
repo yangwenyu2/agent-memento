@@ -21,11 +21,8 @@ Every AI coding agent hits the same wall:
 
 ## How It Works
 
-```text
-You (chat) → Architect (plans) → MASTER_PLAN.md → Tick Workers (execute)
-                                        ↑                    |
-                                        └── results ─────────┘
-```
+![Agent Memento Architecture](docs/assets/architecture.png)
+
 
 1. **You** describe what you want in natural language
 2. **The Architect** (your main AI session) breaks it into a checklist

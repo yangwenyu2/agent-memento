@@ -19,11 +19,8 @@
 
 ## 它是怎么工作的？(How It Works)
 
-```text
-人类 (发号施令) → 架构师机 (起草盘面) → MASTER_PLAN.md → 牛马机 (Tick Worker 执行)
-                                          ↑                      |
-                                          └──结果回传，验证记录──┘
-```
+![Agent Memento Architecture](docs/assets/architecture.png)
+
 
 1. **你** 在主群发一句自然语言：“我要爬昨天所有 AI 论文放到数据库”。
 2. **架构师 (主 Agent Session)** 启动思考，把项目切成严丝合缝的 `[ ]` 检查清单任务。
