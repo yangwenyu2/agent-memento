@@ -107,34 +107,38 @@ app.post('/api/chat', (req, res) => {
         }
         
         try {
-            // Some plugins output verbose logs to stdout even with --json
-            // which breaks parsing. We need to extract the LAST {...} object.
-            let jsonText = '';
-            const match = stdout.match(/\{[\s\S]*\}/);
-            if (match) {
-                // If there are multiple JSON-like blocks, taking the whole match might fail parsed
-                // A safer way is to find the last occurrence of {"payloads"
-                const lines = stdout.split('\n');
-                let startIndex = -1;
-                for(let i=lines.length-1; i>=0; i--) {
-                    if(lines[i].includes('{"payloads"')) {
-                        startIndex = i;
+            // Because plugins dump arbitrary un-capturable garbage to stdout even in JSON mode,
+            // we will find ALL substring blocks that look like JSON and try to parse them until we find payloads.
+            let reply = '【系统】模型执行完毕，但是没有收到有效的回应。';
+
+            // Find anything that starts with { and ends with }
+            const jsonMatches = stdout.match(/\{[\s\S]*?\}/g) || [];
+            
+            // Iterate from the back (usually the answer is at the end)
+            for (let i = jsonMatches.length - 1; i >= 0; i--) {
+                try {
+                    const parsed = JSON.parse(jsonMatches[i]);
+                    // Check if it's the actual agent response payload
+                    if (parsed.payloads && Array.isArray(parsed.payloads) && parsed.payloads.length > 0) {
+                        reply = parsed.payloads[0].text || reply;
                         break;
                     }
+                } catch(e) {
+                    // Not valid JSON, continue
                 }
-                if(startIndex !== -1) {
-                    jsonText = lines.slice(startIndex).join('\n');
-                } else {
-                     jsonText = match[0];
-                }
-            } else {
-                jsonText = stdout.trim();
             }
-            const payload = JSON.parse(jsonText || '{}');
-            const texts = payload.payloads || [];
-            let reply = texts[0]?.text || '【系统】模型已执行，但无文本输出。';
-            res.json({ reply, color: '#8ad7ff' });
+
+            // Fallback: If we still didn't find "payloads", try to just rip out the string around the usual structure
+            if (reply.includes('但是没有收到有效的回应') && stdout.includes('"text":')) {
+                const textMatch = stdout.match(/"text"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/);
+                if (textMatch) {
+                    reply = JSON.parse('"' + textMatch[1] + '"'); // unescape
+                }
+            }
+
+            res.json({ reply: reply, color: '#8ad7ff' });
         } catch (e) {
+            console.error("Parse JSON error finally:", e); {
             console.error("Parse JSON error:", e, "\nSTDOUT:", stdout);
             res.json({ reply: '【系统】模型回答无法解析。\n' + stdout.substring(0, 100), color: '#ff8a8a' });
         }
