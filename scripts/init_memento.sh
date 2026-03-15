@@ -133,7 +133,7 @@ chmod +x "$PROJECT_DIR/scripts/dashboard.sh"
 
 # Generate Tick Worker script
 ENGINE_SCRIPT="$PROJECT_DIR/scripts/memento_tick.sh"
-cat << ENGINE > "$ENGINE_SCRIPT"
+cat << 'ENGINE' > "$ENGINE_SCRIPT"
 #!/usr/bin/env bash
 set -euo pipefail
 
