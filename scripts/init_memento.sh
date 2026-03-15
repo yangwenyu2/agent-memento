@@ -140,6 +140,13 @@ if ! flock -n 200; then
   exit 0
 fi
 
+
+# Pre-Tick Meta Update
+TOTAL_TASKS=$(grep -cE "^- \[[ x~!]\]" "$PLAN")
+COMPLETED_TASKS=$(grep -cE "^- \[x\]" "$PLAN")
+sed -i "s/^total_tasks: .*/total_tasks: $TOTAL_TASKS/" "$PLAN"
+sed -i "s/^completed_tasks: .*/completed_tasks: $COMPLETED_TASKS/" "$PLAN"
+
 # 检查 tick_mode
 TICK_MODE=$(grep -oP 'tick_mode:\s*\K\w+' "$PLAN" || echo "stopped")
 if [[ "$TICK_MODE" != "auto" ]]; then
