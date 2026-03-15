@@ -359,9 +359,11 @@
             let tickCount = matchTick ? matchTick[1] : '--';
 
             // Auto-calculate if it's 0 (fallback for manual edits)
-            if (total === 0) {
-                total = (data.content.match(/- \[[x ~!]\]|- \[ \]/g) || []).length;
-                done = (data.content.match(/- \[x\]/g) || []).length;
+            // Auto-calculate if it's 0 (fallback for manual edits)
+            if (total === 0 || isNaN(total)) {
+                // Parse markdown directly for boxes
+                total = (data.content.match(/- \[[ x~!\]\]/g) || []).length + (data.content.match(/- \[[x|X| ]\]/g) || []).length;
+                done = (data.content.match(/- \[[x|X]\]/g) || []).length;
             }
 
             if (total < done) total = done; // clamp to prevent logic bugs 150%
