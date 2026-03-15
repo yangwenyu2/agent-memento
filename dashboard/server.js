@@ -78,11 +78,13 @@ app.post('/api/chat', (req, res) => {
     const message = req.body.message || '';
     if (!message) return res.status(400).json({ error: 'empty message' });
 
-    const escapedMessage = JSON.stringify(message); // handles quotes safely in bash
+    const escapedMessage = JSON.stringify(message).slice(1, -1).replace(/"/g, '\\\"'); // raw string
     const sessionName = `memento-dashboard-${path.basename(PROJECT_DIR)}`;
     
-    // Adding path explicitly since non-interactive shells sometimes miss global binaries
-    const cmd = `bash -lc "openclaw agent --local --json --session-id ${sessionName} -m ${escapedMessage} 2>/dev/null"`;
+    // Pass the MASTER_PLAN directly as system prompt or prepended message so the model knows it is an Architect
+    const systemPrompt = `You are the Architect of a Memento autonomous project. You reside in the Dashboard. The user is talking to you to steer the project. Here is the current MASTER_PLAN.md state:\n\n`;
+    
+    const cmd = `bash -lc "export PLAN_DATA=\$(cat \"${PLAN_PATH}\") && openclaw agent --local --json --session-id ${sessionName} -m \"${systemPrompt}\$PLAN_DATA\n\nUser Command: ${escapedMessage}\" 2>/dev/null"`;
     
     exec(cmd, { timeout: 120000, env: process.env }, (error, stdout, stderr) => {
         if (error) {
