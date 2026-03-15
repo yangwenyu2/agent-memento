@@ -94,54 +94,17 @@ app.post('/api/chat', (req, res) => {
     
     const cmdFiles = path.join(require('os').tmpdir(), 'arch_prompt_' + Date.now() + '.txt');
     fs.writeFileSync(cmdFiles, prompt);
-    const cmd = `openclaw agent --local --json --session-id "${sessionName}" -m "$(cat ${cmdFiles})" 2>/dev/null || echo '{"payloads":[{"text":"Bridge Error"}]}'`;
+    const cmd = `openclaw agent --local --json --session-id "${sessionName}" -m "$(cat ${cmdFiles})" 2>/dev/null > ${cmdFiles}.out.json || true; node -e "const fs=require('fs'); try { const d = fs.readFileSync('${cmdFiles}.out.json','utf8'); const m = d.match(/\{[\\s\\S]*\}/); if(!m)throw 'no'; const p = JSON.parse(m[0]); console.log(JSON.stringify(p.payloads[0].text)); } catch(e) { console.log(JSON.stringify('【系统】提取失败...')); }"`;
 
-    
     exec(cmd, { timeout: 120000, env }, (error, stdout, stderr) => {
-        if (error) {
-            console.error("OpenClaw error:", error);
-            // sometimes it throws error but still outputs stdout
-            if (!stdout.trim()) {
-                return res.json({ reply: `【系统异常】执行桥接通信失败：${error.message}`, color: '#ff8a8a' });
-            }
-        }
-        
         try {
-            // Because plugins dump arbitrary un-capturable garbage to stdout even in JSON mode,
-            // we will find ALL substring blocks that look like JSON and try to parse them until we find payloads.
-            let reply = '【系统】模型执行完毕，但是没有收到有效的回应。';
-
-            // Find anything that starts with { and ends with }
-            const jsonMatches = stdout.match(/\{[\s\S]*?\}/g) || [];
-            
-            // Iterate from the back (usually the answer is at the end)
-            for (let i = jsonMatches.length - 1; i >= 0; i--) {
-                try {
-                    const parsed = JSON.parse(jsonMatches[i]);
-                    // Check if it's the actual agent response payload
-                    if (parsed.payloads && Array.isArray(parsed.payloads) && parsed.payloads.length > 0) {
-                        reply = parsed.payloads[0].text || reply;
-                        break;
-                    }
-                } catch(e) {
-                    // Not valid JSON, continue
-                }
-            }
-
-            // Fallback: If we still didn't find "payloads", try to just rip out the string around the usual structure
-            if (reply.includes('但是没有收到有效的回应') && stdout.includes('"text":')) {
-                const textMatch = stdout.match(/"text"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/);
-                if (textMatch) {
-                    reply = JSON.parse('"' + textMatch[1] + '"'); // unescape
-                }
-            }
-
+            const reply = JSON.parse(stdout.trim());
             res.json({ reply: reply, color: '#8ad7ff' });
         } catch (e) {
-            
             console.error("Parse JSON error finally:", e, "\nSTDOUT:", stdout);
-            res.json({ reply: '【系统】模型回答无法解析。\n' + stdout.substring(0, 100), color: '#ff8a8a' });
+            res.json({ reply: '【系统】模型回答无法解析。', color: '#ff8a8a' });
         }
+    });
 
     });
 });
