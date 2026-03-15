@@ -138,10 +138,11 @@ app.post('/api/chat', (req, res) => {
 
             res.json({ reply: reply, color: '#8ad7ff' });
         } catch (e) {
-            console.error("Parse JSON error finally:", e); {
-            console.error("Parse JSON error:", e, "\nSTDOUT:", stdout);
+            
+            console.error("Parse JSON error finally:", e, "\nSTDOUT:", stdout);
             res.json({ reply: '【系统】模型回答无法解析。\n' + stdout.substring(0, 100), color: '#ff8a8a' });
         }
+
     });
 });
 
