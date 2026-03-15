@@ -358,10 +358,13 @@
             let done = matchDone ? parseInt(matchDone[1]) : 0;
             let tickCount = matchTick ? matchTick[1] : '--';
 
-            // Auto-calculate if it's 0 (fallback for manual edits)
-            if (total === 0 || isNaN(total)) {
-                total = (data.content.match(/-\s*\[([\s\S]?)\]/g) || []).filter(m => !m.includes(']]')).length;
-                done = (data.content.match(/-\s*\[[xX]\]/g) || []).length;
+            // Regex parsing fallback. Sometimes Bash counts fail and write completed_tasks: 0 even if we have [x]!
+            // Let's forcefully recalculate from the raw markdown if the header counts seem anomalously low (0)
+            if (total === 0 || isNaN(total) || done === 0) {
+                const parsedTotal = (data.content.match(/-\s*\[([\s\S]?)\]/g) || []).filter(m => !m.includes(']]')).length;
+                const parsedDone = (data.content.match(/-\s*\[[xX]\]/g) || []).length;
+                total = Math.max(total, parsedTotal);
+                done = Math.max(done, parsedDone);
             }
 
 
