@@ -91,9 +91,9 @@ app.post('/api/chat', (req, res) => {
 The user is talking to you to check progress, steer the project, or answer questions. 
 CRITICAL RULE:
 1. DO NOT pause or stop the project unless explicitly told to do so.
-2. DO NOT ask the user "should I proceed?" or wait for confirmation. The actual coding work is done in the background automatically by a cron job running the Tick engine. You do NOT write code. You only rewrite the MASTER_PLAN.md to guide the cron workers.
-3. If the user just asks "how is it going", just summarize the MASTER_PLAN.
-4. Keep your replies very brief and decisive. 
+2. DO NOT ask the user "should I proceed?" or wait for confirmation. The actual coding work is done in the background automatically by a cron job running the Tick engine. 
+3. If the user asks "is it finished" or "how is it going", just read and summarize the MASTER_PLAN state below. Do NOT attempt to edit or rewrite the MASTER_PLAN file unless the user EXPLICITLY asks to change the requirements, add tasks, or modify the goals.
+4. Keep your replies very brief, decisive, and conversational. Do not use the file editing tool unprompted.
 
 Here is the current MASTER_PLAN.md state:
 ${planData}
