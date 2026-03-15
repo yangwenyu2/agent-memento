@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# script to initialize a new Tick-Driven Project (Agent Memento v0.2)
+# script to initialize a new Tick-Driven Project
 set -euo pipefail
 
 if [ "$#" -ne 1 ]; then
@@ -13,21 +13,23 @@ PROJECT_DIR="$(pwd)/projects/$PROJECT_NAME"
 echo "🚀 Initializing Agent Memento Framework (v0.2) for: $PROJECT_NAME"
 
 # Create project scaffolding
-mkdir -p "$PROJECT_DIR"/{docs,src,tests,logs,scripts}
+mkdir -p "$PROJECT_DIR"/{docs,src,logs,scripts}
 
 # Generate MASTER_PLAN.md template
 cat << 'PLAN' > "$PROJECT_DIR/docs/MASTER_PLAN.md"
-# MASTER_PLAN: $PROJECT_NAME
+# Project Master Plan: $PROJECT_NAME
+
+> Write exactly ONE grand objective here. Ensure tickets are extremely granular. Never rewrite files entirely.
 
 ## Meta
 - created: $(date +%Y-%m-%d)
-- tick_mode: auto          <!-- auto | paused | stopped -->
+- tick_mode: paused          <!-- auto | paused | stopped -->
 - max_retries: 3           <!-- 单任务最大重试次数 -->
 - max_tasks_per_tick: 1    <!-- 快任务时允许单 Tick 连续处理上限 -->
 - max_diff_lines: 200      <!-- diff size guard 阈值 -->
 - stale_lock_timeout: 15min <!-- [~] 僵尸锁重置阈值 -->
 - circuit_breaker_threshold: 5 <!-- 连续失败多少次触发熔断 -->
-- clean_strategy: git-clean <!-- git-clean | snapshot | docker -->
+- clean_strategy: git-clean <!-- 三阶段防爆清理机制 -->
 - clean_ignore: .memento_cleanignore
 - status_max_entries: 50    <!-- TICK_STATUS.md 最大条目数，超出自动归档 -->
 - status_archive_dir: logs/status_archive/
@@ -47,60 +49,44 @@ cat << 'PLAN' > "$PROJECT_DIR/docs/MASTER_PLAN.md"
   - guard_files: []
   - estimate: 5min
   - retries: 0
-
-- [ ] `T-102` [MODULE:test] Establish unit test baseline
-  - verify: `npm test || pytest || echo "Skipped" && echo PASS`
-  - context_files: []
-  - guard_files: []
-  - estimate: 5min
-  - retries: 0
-
 PLAN
 
-# Generate PROJECT_MAP.md
+# Generate PROJECT_MAP.md template
 cat << 'MAP' > "$PROJECT_DIR/docs/PROJECT_MAP.md"
-# PROJECT MAP: $PROJECT_NAME
+# Project Map & Architecture
 
-> Worker 的 GPS。不读全部源码，先读地图，再按 `context_files` 精准加载。
+> Maintain a high-level list of files and their purposes so the Worker doesn't get lost.
 
-## Architecture Overview
-(Describe the high level architecture here)
-
-## Module Registry
-### [MODULE:init]
-- Purpose: Project initialization files
-
-## File Tree (auto-maintained)
-src/
-tests/
+## Directory Structure
+- `src/`: 
+- `docs/`: Memento physical state files
 MAP
 
-# Generate TICK_STATUS.md
-cat << 'STATUS' > "$PROJECT_DIR/docs/TICK_STATUS.md"
-# TICK STATUS LOG
+# Initialize empty TICK_STATUS and HUMAN_NOTES
+echo "# TICK STATUS LOG" > "$PROJECT_DIR/docs/TICK_STATUS.md"
 
-STATUS
-
-# Generate HUMAN_NOTES.md
 cat << 'NOTES' > "$PROJECT_DIR/docs/HUMAN_NOTES.md"
-# HUMAN NOTES
+# Human Architect Notes
 
-<!-- Add notes here for the Architect or the Tick Worker -->
+> Use this file to pass specific hints or constraints to the Tick Worker. 
 
-## Active Notes
-
-## Archive
+- [NOTE:READ] For ticket T-101, make sure to use Node v20 conventions.
 NOTES
 
-# Generate .memento_cleanignore
-cat << 'IGNORE' > "$PROJECT_DIR/.memento_cleanignore"
+# Ignore files
+cat << 'IGNORE' > "$PROJECT_DIR/.gitignore"
+node_modules/
+__pycache__/
+logs/
+.env
+IGNORE
+
+cat << 'CIGNORE' > "$PROJECT_DIR/.memento_cleanignore"
 node_modules/
 .env
-.env.local
-*.sqlite
 vendor/
-__pycache__/
-IGNORE
+logs/
+CIGNORE
 
 # Generate TICK_WORKER System Prompt
 cat << 'PROMPT' > "$PROJECT_DIR/scripts/tick_worker_system_prompt.md"
@@ -108,25 +94,27 @@ cat << 'PROMPT' > "$PROJECT_DIR/scripts/tick_worker_system_prompt.md"
 You are a Memento Tick Worker—a short-lived, emotionless autonomous shell script designed to execute exactly ONE precise task from MASTER_PLAN.md before terminating.
 
 ## Your Identity & Architecture
-- You wake up, read `MASTER_PLAN.md`, `PROJECT_MAP.md`, and `HUMAN_NOTES.md`.
-- You identify the FIRST pending `[ ]` task respecting phase dependencies and retry limits.
-- You perform surgical, robust node/python script edits.
-- You MUST run the `verify` command physically.
+- You wake up, read \`MASTER_PLAN.md\`, \`PROJECT_MAP.md\`, and \`HUMAN_NOTES.md\`.
+- You identify the FIRST pending \`[ ]\` task respecting phase dependencies and retry limits.
+- You perform surgical, robust edits using bash `sed`, `awk`, Python AST manipulation, `ed`, or targeted `cat EOF`.
+- You MUST run the \`verify\` command physically.
 - You must NOT say "[x] done" without an Exit Code 0 from the verify command.
+- **Language Matching**: You MUST use the same language as the target project files when writing explanations or logs (e.g., if analyzing Chinese code, write ERROR ANALYSIS in Chinese).
 
 ## The Iron Discipline (Strict)
 1. **Surgical Edits Only**: No massive file rewrites.
 2. **Evidence-based Audit**: Do not hallucinate success. No Exit 0 = FAILED.
-3. **No Silent Ghosting**: Record failures and traceback logs into `TICK_STATUS.md`.
-4. **Boundary Adherence**: ONLY edit files listed in `context_files`. DO NOT touch `guard_files`. NEVER alter the internal structure of `MASTER_PLAN.md` (only update task checkboxes and `retries`).
-5. **Output Contracts**: When a task completes, document ANY newly exported interfaces or architectural decisions under an "- **Outputs**:" bullet in `TICK_STATUS.md`.
+3. **No Silent Ghosting**: Record failures and traceback logs into \`TICK_STATUS.md\`.
+4. **Boundary Adherence**: ONLY edit files listed in \`context_files\`. DO NOT touch \`guard_files\`. NEVER alter the internal structure of \`MASTER_PLAN.md\` (only update task checkboxes and \`retries\`).
+5. **Atomic Commits**: `git add -A && git commit -m "memento: task"` on SUCCESS before exiting. If you don't commit, your files will be WIPE OUT by git clean.
+6. **Output Contracts**: When a task completes, document ANY newly exported interfaces or architectural decisions under an \`- **Outputs**:\` bullet in \`TICK_STATUS.md\`.
 PROMPT
 
 # Generate Dashboard script
-cat << DASHBOARD > "$PROJECT_DIR/scripts/dashboard.sh"
+cat << 'DASHBOARD' > "$PROJECT_DIR/scripts/dashboard.sh"
 #!/usr/bin/env bash
-cd "\$(dirname "\$0")/../dashboard"
-npm start -- --project-dir "\$(dirname "\$0")/.." --port 3777
+cd "$(dirname "$0")/../.."
+npm start -- --project-dir "$PROJECT_DIR" --port 3777
 DASHBOARD
 
 chmod +x "$PROJECT_DIR/scripts/dashboard.sh"
@@ -137,139 +125,102 @@ cat << 'ENGINE' > "$ENGINE_SCRIPT"
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_DIR="\$(cd "\$(dirname "\$0")/.." && pwd)"
-PLAN="\$PROJECT_DIR/docs/MASTER_PLAN.md"
-STATUS="\$PROJECT_DIR/docs/TICK_STATUS.md"
-LOG_DIR="\$PROJECT_DIR/logs"
-TIMESTAMP=\$(date +%Y-%m-%dT%H:%M:%S)
-TICK_LOG="\$LOG_DIR/tick_\${TIMESTAMP}.log"
-LOCK_FILE="\$PROJECT_DIR/.memento.lock"
-LOCK_FD=200
+PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+PLAN="$PROJECT_DIR/docs/MASTER_PLAN.md"
+STATUS="$PROJECT_DIR/docs/TICK_STATUS.md"
+LOG_DIR="$PROJECT_DIR/logs"
+TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S)
+TICK_LOG="$LOG_DIR/tick_${TIMESTAMP}.log"
+LOCK_FILE="$PROJECT_DIR/.memento.lock"
 
-acquire_lock() {
- exec \$LOCK_FD>"\$LOCK_FILE"
- if ! flock -n \$LOCK_FD; then
- echo "[\$TIMESTAMP] Tick skipped: another worker running" >> "\$STATUS"
- exit 0
- fi
-}
-
-release_lock() {
- flock -u \$LOCK_FD
-}
-
-# 检查 tick_mode
-TICK_MODE=\$(grep -oP 'tick_mode:\s*\K\w+' "\$PLAN" || echo "stopped")
-if [[ "\$TICK_MODE" != "auto" ]]; then
-  echo "[\$TIMESTAMP] Tick skipped: mode=\$TICK_MODE" >> "\$STATUS"
+# 防撞车：确保同一时间只有一个 Tick Worker 运行
+exec 200>"$LOCK_FILE"
+if ! flock -n 200; then
+  echo "[$TIMESTAMP] Tick skipped: previous tick still running" >> "$STATUS"
   exit 0
 fi
 
-echo "[\$TIMESTAMP] Waking up tick worker for \$PROJECT_DIR..." >> "\$TICK_LOG"
+# 检查 tick_mode
+TICK_MODE=$(grep -oP 'tick_mode:\s*\K\w+' "$PLAN" || echo "stopped")
+if [[ "$TICK_MODE" != "auto" ]]; then
+  echo "[$TIMESTAMP] Tick skipped: mode=$TICK_MODE" >> "$STATUS"
+  exit 0
+fi
 
-acquire_lock
+# 调用 LLM Agent 执行 Tick
+SYS_CONTENT=$(cat "$PROJECT_DIR/scripts/tick_worker_system_prompt.md")
+PLAN_CONTENT=$(cat "$PLAN" "$PROJECT_DIR/docs/PROJECT_MAP.md" "$PROJECT_DIR/docs/HUMAN_NOTES.md")
+MSG="[SYSTEM CONTEXT]\n$SYS_CONTENT\n\n[TASK INSTRUCTION]\nRead $PLAN, locate the first executable task following the phase dependence and task retries logic, complete it, and update the tick status in $STATUS. Then perform the Verify step and act strictly based on the exit code. If failed, rollback using git checkout and increment retries in the plan.\n\n[FILE RESOURCES TACKED BELOW]\n$PLAN_CONTENT"
 
-# Call the LLM
-openclaw agent --local --json --session-id "memento-\$(basename "\$PROJECT_DIR")" \
-  --system-prompt-file "$PROJECT_DIR/scripts/tick_worker_system_prompt.md" \
-  --prompt "Read $PLAN, locate the first executable task following the phase dependence and task retries logic, complete it, and update the tick status in $STATUS. Then perform the Verify step and act strictly based on the exit code. If failed, rollback using git checkout and increment retries in the plan." \
-  --context-files "$PLAN" "$PROJECT_DIR/docs/PROJECT_MAP.md" "$PROJECT_DIR/docs/HUMAN_NOTES.md" \
-  2>&1 | tee -a "\$TICK_LOG"
+openclaw agent --local --json --session-id "memento-$(basename "$PROJECT_DIR")" -m "$MSG" 2>&1 | tee -a "$TICK_LOG"
 
-release_lock
-
-# 后处理：三阶段防爆清理
-cd "\$PROJECT_DIR"
-if [[ -n \$(git status --porcelain) ]]; then
-  echo "[\$TIMESTAMP] WARNING: Dirty workspace detected. Running 3-phase cleanup." >> "\$STATUS"
+# 后处理：防爆与三阶段清理
+cd "$PROJECT_DIR"
+if [[ -n $(git status --porcelain) ]]; then
+  echo "[$TIMESTAMP] WARNING: Dirty workspace detected. Running 3-phase cleanup." >> "$STATUS"
 
   # Phase 1: 恢复已追踪文件
   git checkout -- .
 
   # Phase 2: 清理未追踪文件（排除保护列表）
   if [[ -f ".memento_cleanignore" ]]; then
-    git clean -fd --exclude-from=.memento_cleanignore
+    # 读取 ignore 文件并转换为 -e 选项
+    EXCLUDES=$(awk '{printf "-e %s ", $0}' .memento_cleanignore)
+    git clean -fd $EXCLUDES
   else
     git clean -fd
   fi
 
   # Phase 3: 兜底——如果还是脏的，紧急 stash
-  if [[ -n \$(git status --porcelain) ]]; then
-    git stash --include-untracked -m "memento-emergency-stash-\$TIMESTAMP"
-    echo "[\$TIMESTAMP] CRITICAL: Emergency stash created. Manual inspection required." >> "\$STATUS"
+  if [[ -n $(git status --porcelain) ]]; then
+    git stash --include-untracked -m "memento-emergency-stash-$TIMESTAMP"
+    echo "[$TIMESTAMP] CRITICAL: Emergency stash created. Manual inspection required." >> "$STATUS"
   fi
 fi
 
 # 日志轮转
-MAX_ENTRIES=\$(grep -oP 'status_max_entries:\s*\K\d+' "\$PLAN" || echo "50")
-CURRENT_ENTRIES=\$(grep -c '^\## \[' "\$STATUS" || true)
-if [[ \$CURRENT_ENTRIES -gt \$MAX_ENTRIES ]]; then
-  ARCHIVE_DIR="\$PROJECT_DIR/logs/status_archive"
-  mkdir -p "\$ARCHIVE_DIR"
-  mv "\$STATUS" "\$ARCHIVE_DIR/TICK_STATUS_\$(date +%Y%m%d_%H%M%S).md"
-  echo "# TICK STATUS LOG" > "\$STATUS"
-  echo "" >> "\$STATUS"
-  echo "<!-- Rotated at \$TIMESTAMP. Previous entries archived. -->" >> "\$STATUS"
+MAX_ENTRIES=$(grep -oP 'status_max_entries:\s*\K\d+' "$PLAN" || echo "50")
+CURRENT_ENTRIES=$(grep -c '^\## \[' "$STATUS" || true)
+if [[ $CURRENT_ENTRIES -gt $MAX_ENTRIES ]]; then
+  ARCHIVE_DIR="$PROJECT_DIR/logs/status_archive"
+  mkdir -p "$ARCHIVE_DIR"
+  mv "$STATUS" "$ARCHIVE_DIR/TICK_STATUS_$(date +%Y%m%d_%H%M%S).md"
+  echo "# TICK STATUS LOG" > "$STATUS"
+  echo "" >> "$STATUS"
+  echo "<!-- Rotated at $TIMESTAMP. Previous entries archived. -->" >> "$STATUS"
 fi
 
 # 告警检测
-BLOCKED_COUNT=\$(grep -c '\[!\]' "\$PLAN" || true)
-CIRCUIT_BROKEN=\$(grep -c 'CIRCUIT BREAKER' "\$STATUS" || true)
+BLOCKED_COUNT=$(grep -cP '^\s*- \[\!\]' "$PLAN" || true)
+CIRCUIT_BROKEN=$(grep -c 'CIRCUIT BREAKER' "$STATUS" || true)
 
-if [[ \$BLOCKED_COUNT -gt 0 || \$CIRCUIT_BROKEN -gt 0 ]]; then
-  cat > "\$PROJECT_DIR/.memento_alert" << EOF_INNER
-timestamp: \$TIMESTAMP
-blocked_tasks: \$BLOCKED_COUNT
-circuit_breaker: \$([[ \$CIRCUIT_BROKEN -gt 0 ]] && echo "TRIGGERED" || echo "OK")
-message: Pipeline needs attention. \$BLOCKED_COUNT task(s) blocked.
+if [[ $BLOCKED_COUNT -gt 0 || $CIRCUIT_BROKEN -gt 0 ]]; then
+  cat > "$PROJECT_DIR/.memento_alert" << EOF_INNER
+timestamp: $TIMESTAMP
+blocked_tasks: $BLOCKED_COUNT
+circuit_breaker: $([[ $CIRCUIT_BROKEN -gt 0 ]] && echo "TRIGGERED" || echo "OK")
+message: Pipeline needs attention. $BLOCKED_COUNT task(s) blocked.
 EOF_INNER
 fi
 
 # 如果一切正常且之前有告警，清除告警
-if [[ \$BLOCKED_COUNT -eq 0 && \$CIRCUIT_BROKEN -eq 0 && -f "\$PROJECT_DIR/.memento_alert" ]]; then
-  rm -f "\$PROJECT_DIR/.memento_alert"
-fi
-ENGINE
-
-# 轮转/归档 TICK_STATUS.md
-ENTRY_COUNT=$(grep -c "^## \[" "\$STATUS" || true)
-if [ "\$ENTRY_COUNT" -gt 50 ]; then
-  ARCHIVE_FILE="\$LOG_DIR/tick_status_archive_\$(date +%Y-%m-%d).md"
-  mkdir -p "\$LOG_DIR"
-  echo "--- Archived at \$TIMESTAMP ---" >> "\$ARCHIVE_FILE"
-  cat "\$STATUS" >> "\$ARCHIVE_FILE"
-  echo "# TICK STATUS LOG" > "\$STATUS"
-  echo "[\$TIMESTAMP] TICK_STATUS.md rolled over to \$ARCHIVE_FILE." >> "\$STATUS"
-fi
-
-# 唤醒 Architect 巡检告警机制
-BLOCKED_COUNT=$(grep -c '\[!\]' "\$PLAN" || true)
-if [ "\$BLOCKED_COUNT" -gt 0 ]; then
-  echo "\$TIMESTAMP: ARCHITECT_NEEDED — blocked=\$BLOCKED_COUNT" > "\$PROJECT_DIR/.memento_alert"
+if [[ $BLOCKED_COUNT -eq 0 && $CIRCUIT_BROKEN -eq 0 && -f "$PROJECT_DIR/.memento_alert" ]]; then
+  rm -f "$PROJECT_DIR/.memento_alert"
 fi
 
 # 增加总 Tick 数
-sed -i 's/total_ticks: [0-9]*/total_ticks: '$((\$(grep -oP 'total_ticks: \K[0-9]+' "\$PLAN" || echo 0) + 1))'/' "\$PLAN"
+sed -i 's/total_ticks: [0-9]*/total_ticks: '$(($(grep -oP 'total_ticks: \K[0-9]+' "$PLAN" || echo 0) + 1))'/' "$PLAN"
+ENGINE
 
 chmod +x "$ENGINE_SCRIPT"
 
-# Initialize git repository
+# Initialize Git
 cd "$PROJECT_DIR"
-if [ ! -d .git ]; then
-    git init
-    # Add openclaw specific ignores if needed
-    cat << 'GITIGNORE' > .gitignore
-logs/
-.memento.lock
-node_modules/
-__pycache__/
-.env
-GITIGNORE
-    git add .
-    git commit -m "chore: memento framework init"
-fi
+git init
+git add .
+git commit -m "chore: memento framework init"
 
 echo "✅ Project '$PROJECT_NAME' scaffolded successfully at $PROJECT_DIR."
 echo "✅ Engineering plan injected: $PROJECT_DIR/docs/MASTER_PLAN.md"
-echo "✅ Tick Engine erected at: $ENGINE_SCRIPT"
-echo "💡 To begin autonomous execution, run or hook cron to: $ENGINE_SCRIPT"
+echo "✅ Tick Engine erected at: $PROJECT_DIR/scripts/memento_tick.sh"
+echo "💡 To begin autonomous execution, run or hook cron to: $PROJECT_DIR/scripts/memento_tick.sh"
