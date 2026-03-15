@@ -1,6 +1,6 @@
 {
   "name": "agent-memento",
-  "version": "2.0.9",
+  "version": "2.0.11",
   "description": "Tick-Driven Autonomous Production Factory for LLMs",
   "main": "SKILL.md",
   "scripts": {
