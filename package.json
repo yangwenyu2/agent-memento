@@ -5,5 +5,22 @@
   "main": "SKILL.md",
   "scripts": {
     "init": "bash scripts/init_memento.sh"
+  },
+  "engines": {
+    "node": ">=18",
+    "npm": ">=8"
+  },
+  "clawdbot": {
+    "emoji": "🧠",
+    "requires": {
+      "bins": [
+        "bash",
+        "openclaw",
+        "node",
+        "npm",
+        "git"
+      ],
+      "env": []
+    }
   }
 }

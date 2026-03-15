@@ -162,7 +162,7 @@ SYS_CONTENT=$(cat "$PROJECT_DIR/scripts/tick_worker_system_prompt.md")
 PLAN_CONTENT=$(cat "$PLAN" "$PROJECT_DIR/docs/PROJECT_MAP.md" "$PROJECT_DIR/docs/HUMAN_NOTES.md")
 MSG="[SYSTEM CONTEXT]\n$SYS_CONTENT\n\n[TASK INSTRUCTION]\nRead $PLAN, locate the first executable task following the phase dependence and task retries logic, complete it, and update the tick status in $STATUS. Then perform the Verify step and act strictly based on the exit code. If failed, rollback using git checkout and increment retries in the plan.\n\n[FILE RESOURCES TACKED BELOW]\n$PLAN_CONTENT"
 
-openclaw agent --local --json --session-id "memento-$(basename "$PROJECT_DIR")" -m "$MSG" 2>&1 | tee -a "$TICK_LOG"
+env -i PATH="$PATH" openclaw agent --local --json --session-id "memento-$(basename "$PROJECT_DIR")" -m "$MSG" 2>&1 | tee -a "$TICK_LOG"
 
 # 后处理：防爆与三阶段清理
 cd "$PROJECT_DIR"
