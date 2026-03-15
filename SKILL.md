@@ -20,6 +20,25 @@ metadata: {"clawdbot":{"emoji":"🧠","requires":{"bins":["bash","openclaw"],"en
 
 ---
 
+
+## Quick Start (30 秒上手)
+
+1. 初始化项目：
+   ```bash
+   bash skills/agent-memento/scripts/init_memento.sh MyProject
+   ```
+2. 在主对话中让 Architect 填写 `MASTER_PLAN.md` 和 `PROJECT_MAP.md`
+3. 启动自动执行：
+   ```bash
+   crontab -e
+   # 添加：*/5 * * * * /path/to/MyProject/scripts/memento_tick.sh
+   ```
+4. （可选）启动 Dashboard 看板监控：
+   ```bash
+   bash scripts/dashboard.sh
+   ```
+5. 去刷手机。回来看 Dashboard 或 `docs/TICK_STATUS.md` 查看进度。
+
 ## 一、系统架构总览
 
 ```
@@ -105,6 +124,14 @@ metadata: {"clawdbot":{"emoji":"🧠","requires":{"bins":["bash","openclaw"],"en
 - tick_mode: auto          <!-- auto | paused | stopped -->
 - max_retries: 3           <!-- 单任务最大重试次数 -->
 - max_tasks_per_tick: 2    <!-- 快任务时允许单 Tick 连续处理上限 -->
+- max_diff_lines: 200      <!-- diff size guard 阈值 -->
+- stale_lock_timeout: 15min <!-- [~] 僵尸锁重置阈值 -->
+- circuit_breaker_threshold: 5 <!-- 连续失败多少次触发熔断 -->
+- clean_strategy: git-clean <!-- 三阶段防爆清理机制 -->
+- clean_ignore: .memento_cleanignore
+- total_ticks: 0           <!-- 自动递增的 Tick 计数器 -->
+- total_tasks: 15          <!-- 自动维护 -->
+- completed_tasks: 0       <!-- 自动维护 -->
 
 ---
 
