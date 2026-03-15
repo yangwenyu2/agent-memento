@@ -78,27 +78,32 @@ app.post('/api/chat', (req, res) => {
     const message = req.body.message || '';
     if (!message) return res.status(400).json({ error: 'empty message' });
 
-    // Escape message for bash
-    const escapedMessage = JSON.stringify(message);
+    const escapedMessage = JSON.stringify(message); // handles quotes safely in bash
     const sessionName = `memento-dashboard-${path.basename(PROJECT_DIR)}`;
     
-    // Command to invoke OpenClaw
-    const cmd = `bash -lc "openclaw agent --local --json --session-id ${sessionName} -m ${escapedMessage} 2>/dev/null | sed -n '/^{/,$p'"`;
+    // Adding path explicitly since non-interactive shells sometimes miss global binaries
+    const cmd = `bash -lc "openclaw agent --local --json --session-id ${sessionName} -m ${escapedMessage} 2>/dev/null"`;
     
-    exec(cmd, { timeout: 120000 }, (error, stdout, stderr) => {
+    exec(cmd, { timeout: 120000, env: process.env }, (error, stdout, stderr) => {
         if (error) {
             console.error("OpenClaw error:", error);
-            return res.json({ reply: `【错误】无法唤醒模型：${error.message}`, color: '#ff8a8a' });
+            // sometimes it throws error but still outputs stdout
+            if (!stdout.trim()) {
+                return res.json({ reply: `【错误】无法唤醒模型：${error.message}`, color: '#ff8a8a' });
+            }
         }
         
         try {
-            const payload = JSON.parse(stdout.trim() || '{}');
+            // Find the { ... } JSON payload if there's arbitrary text before it
+            const match = stdout.match(/\{.*\}/s);
+            const jsonText = match ? match[0] : stdout.trim();
+            const payload = JSON.parse(jsonText || '{}');
             const texts = payload.payloads || [];
             let reply = texts[0]?.text || '【系统】模型已执行，但无文本输出。';
             res.json({ reply, color: '#8ad7ff' });
         } catch (e) {
-            console.error("Parse JSON error:", e, stdout);
-            res.json({ reply: '【系统】解析模型回传数据失败。', color: '#ff8a8a' });
+            console.error("Parse JSON error:", e, "\nSTDOUT:", stdout);
+            res.json({ reply: '【系统】模型回答无法解析。\n' + stdout.substring(0, 100), color: '#ff8a8a' });
         }
     });
 });
