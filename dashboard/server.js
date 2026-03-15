@@ -16,6 +16,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Mount the actual user project directory as a static preview path
+app.use('/preview', express.static(PROJECT_DIR));
+
+
 // File paths
 const PLAN_PATH = path.join(PROJECT_DIR, 'docs', 'MASTER_PLAN.md');
 const STATUS_PATH = path.join(PROJECT_DIR, 'docs', 'TICK_STATUS.md');
@@ -87,7 +91,11 @@ app.post('/api/chat', (req, res) => {
     
     const env = { ...process.env, ARCHITECT_PROMPT: prompt };
     
-    const cmd = `openclaw agent --local --json --session-id "${sessionName}" -m "$ARCHITECT_PROMPT" 2>/dev/null`;
+    
+    const cmdFiles = path.join(require('os').tmpdir(), 'arch_prompt_' + Date.now() + '.txt');
+    fs.writeFileSync(cmdFiles, prompt);
+    const cmd = `openclaw agent --local --json --session-id "${sessionName}" -m "$(cat ${cmdFiles})" 2>/dev/null || echo '{"payloads":[{"text":"Bridge Error"}]}'`;
+
     
     exec(cmd, { timeout: 120000, env }, (error, stdout, stderr) => {
         if (error) {
