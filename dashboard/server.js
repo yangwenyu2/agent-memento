@@ -92,20 +92,37 @@ app.post('/api/chat', (req, res) => {
     const env = { ...process.env, ARCHITECT_PROMPT: prompt };
     
     
+    const tmpOut = path.join(require('os').tmpdir(), 'arch_out_' + Date.now() + '.json');
     const cmdFiles = path.join(require('os').tmpdir(), 'arch_prompt_' + Date.now() + '.txt');
     fs.writeFileSync(cmdFiles, prompt);
-    const cmd = `openclaw agent --local --json --session-id "${sessionName}" -m "$(cat ${cmdFiles})" 2>/dev/null > ${cmdFiles}.out.json || true; node -e "const fs=require('fs'); try { const d = fs.readFileSync('${cmdFiles}.out.json','utf8'); const m = d.match(/\{[\\s\\S]*\}/); if(!m)throw 'no'; const p = JSON.parse(m[0]); console.log(JSON.stringify(p.payloads[0].text)); } catch(e) { console.log(JSON.stringify('【系统】提取失败...')); }"`;
+    
+    // Run it, and write all stdout to tmpOut
+    const cmd = `openclaw agent --local --json --session-id "${sessionName}" -m "\$(cat ${cmdFiles})" > ${tmpOut} 2>&1`;
 
     exec(cmd, { timeout: 120000, env }, (error, stdout, stderr) => {
         try {
-            const reply = JSON.parse(stdout.trim());
-            res.json({ reply: reply, color: '#8ad7ff' });
+            const d = fs.readFileSync(tmpOut, 'utf8');
+            const matchP = d.split('\n');
+            let jIdx = -1; 
+            for(let i=matchP.length-1; i>=0; i--) { 
+                if(matchP[i].includes('{"payloads"')) { jIdx = i; break; } 
+            } 
+            if(jIdx===-1) throw new Error('No payloads structure found in output'); 
+            const p = JSON.parse(matchP.slice(jIdx).join('\n')); 
+            
+            // cleanup
+            fs.unlinkSync(tmpOut);
+            fs.unlinkSync(cmdFiles);
+
+            res.json({ reply: p.payloads[0].text, color: '#8ad7ff' });
         } catch (e) {
-            console.error("Parse JSON error finally:", e, "\nSTDOUT:", stdout);
-            res.json({ reply: '【系统】模型回答无法解析。', color: '#ff8a8a' });
+            console.error("Parse Error:", e.message);
+            // let's try to grab whatever raw text from the error
+            let rawLines = [];
+            try { rawLines = fs.readFileSync(tmpOut, 'utf8').split('\n').slice(-10); } catch(x){}
+            res.json({ reply: '【系统桥接失败】\n' + rawLines.join('\n').substring(0,200), color: '#ff8a8a' });
         }
     });
-
     });
 });
 
