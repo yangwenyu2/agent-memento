@@ -685,7 +685,9 @@ bash skills/agent-memento/scripts/init_memento.sh <ProjectName>
 6. 创建 `logs/` 目录
 7. 生成 `scripts/memento_tick.sh` —— Tick Worker 的入口脚本
 8. 生成 `.memento_ignore`（排除 `node_modules/`, `.git/`, `logs/` 等）
-9. 输出提示："请将以下行添加到 crontab 以启动自动执行"
+9. 生成 `scripts/tick_worker_system_prompt.md` —— 注入给 Worker 的全套纪律法则和 Output 规范。
+10. 生成 `.memento_cleanignore`（保护 `node_modules/`, `.env`, `vendor/` 等）
+11. 输出提示：“请将以下行添加到 crontab 以启动自动执行”
 
 ### 9.2 Tick 入口脚本模板 (memento_tick.sh)
 
@@ -700,6 +702,14 @@ LOG_DIR="$PROJECT_DIR/logs"
 TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S)
 TICK_LOG="$LOG_DIR/tick_${TIMESTAMP}.log"
 
+# 防撞车：确保同一时间只有一个 Tick Worker 运行
+LOCK_FILE="$PROJECT_DIR/.memento.lock"
+exec 200>"$LOCK_FILE"
+if ! flock -n 200; then
+  echo "[$TIMESTAMP] Tick skipped: previous tick still running" >> "$STATUS"
+  exit 0
+fi
+
 # 检查 tick_mode
 TICK_MODE=$(grep -oP 'tick_mode:\s*\K\w+' "$PLAN" || echo "stopped")
 if [[ "$TICK_MODE" != "auto" ]]; then
@@ -708,17 +718,64 @@ if [[ "$TICK_MODE" != "auto" ]]; then
 fi
 
 # 调用 LLM Agent 执行 Tick
-openclaw agent \
-  --system-prompt "You are a Memento Tick Worker. Follow the Tick Worker discipline strictly." \
-  --prompt "Read $PLAN, find the first executable task, complete it following the Memento Tick Worker protocol. Write results to $STATUS." \
-  --context-files "$PLAN" "$PROJECT_DIR/docs/PROJECT_MAP.md" "$PROJECT_DIR/docs/HUMAN_NOTES.md" \
-  2>&1 | tee "$TICK_LOG"
+SYSTEM_PROMPT="$(cat "$PROJECT_DIR/scripts/tick_worker_system_prompt.md")"
 
-# 后处理：检查 git 状态，确保无脏文件残留
+openclaw agent \
+  --system-prompt "$SYSTEM_PROMPT" \
+  --prompt "Read \$PLAN, find the first executable task, complete it following the Memento Tick Worker protocol. Write results to \$STATUS." \
+  --context-files "\$PLAN" "\$PROJECT_DIR/docs/PROJECT_MAP.md" "\$PROJECT_DIR/docs/HUMAN_NOTES.md" \
+  2>&1 | tee "\$TICK_LOG"
+
+# 后处理：三阶段防爆清理
 cd "$PROJECT_DIR"
 if [[ -n $(git status --porcelain) ]]; then
-  echo "[$TIMESTAMP] WARNING: Uncommitted changes detected after tick. Auto-cleaning." >> "$STATUS"
+  echo "[$TIMESTAMP] WARNING: Dirty workspace detected. Running 3-phase cleanup." >> "$STATUS"
+
+  # Phase 1: 恢复已追踪文件
   git checkout -- .
+
+  # Phase 2: 清理未追踪文件（排除保护列表）
+  if [[ -f ".memento_cleanignore" ]]; then
+    git clean -fd --exclude-from=.memento_cleanignore
+  else
+    git clean -fd
+  fi
+
+  # Phase 3: 兜底——如果还是脏的，紧急 stash
+  if [[ -n $(git status --porcelain) ]]; then
+    git stash --include-untracked -m "memento-emergency-stash-$TIMESTAMP"
+    echo "[$TIMESTAMP] CRITICAL: Emergency stash created. Manual inspection required." >> "$STATUS"
+  fi
+fi
+
+# 日志轮转
+MAX_ENTRIES=$(grep -oP 'status_max_entries:\s*\K\d+' "$PLAN" || echo "50")
+CURRENT_ENTRIES=$(grep -c '^\## \[' "$STATUS" || true)
+if [[ $CURRENT_ENTRIES -gt $MAX_ENTRIES ]]; then
+  ARCHIVE_DIR="$PROJECT_DIR/logs/status_archive"
+  mkdir -p "$ARCHIVE_DIR"
+  mv "$STATUS" "$ARCHIVE_DIR/TICK_STATUS_$(date +%Y%m%d_%H%M%S).md"
+  echo "# TICK STATUS LOG" > "$STATUS"
+  echo "" >> "$STATUS"
+  echo "<!-- Rotated at $TIMESTAMP. Previous entries archived. -->" >> "$STATUS"
+fi
+
+# 告警检测
+BLOCKED_COUNT=$(grep -c '\[!\]' "$PLAN" || true)
+CIRCUIT_BROKEN=$(grep -c 'CIRCUIT BREAKER' "$STATUS" || true)
+
+if [[ $BLOCKED_COUNT -gt 0 || $CIRCUIT_BROKEN -gt 0 ]]; then
+  cat > "$PROJECT_DIR/.memento_alert" << EOF_INNER
+timestamp: $TIMESTAMP
+blocked_tasks: $BLOCKED_COUNT
+circuit_breaker: $([[ $CIRCUIT_BROKEN -gt 0 ]] && echo "TRIGGERED" || echo "OK")
+message: Pipeline needs attention. $BLOCKED_COUNT task(s) blocked.
+EOF_INNER
+fi
+
+# 如果一切正常且之前有告警，清除告警
+if [[ $BLOCKED_COUNT -eq 0 && $CIRCUIT_BROKEN -eq 0 && -f "$PROJECT_DIR/.memento_alert" ]]; then
+  rm -f "$PROJECT_DIR/.memento_alert"
 fi
 ```
 

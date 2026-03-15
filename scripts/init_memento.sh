@@ -176,17 +176,56 @@ openclaw agent --local --json --session-id "memento-\$(basename "\$PROJECT_DIR")
 
 release_lock
 
-# 后处理：防爆与三阶段清理
+# 后处理：三阶段防爆清理
 cd "\$PROJECT_DIR"
 if [[ -n \$(git status --porcelain) ]]; then
-  echo "[\$TIMESTAMP] WARNING: Uncommitted changes detected after tick. Auto-cleaning (Phase 1 & 2)." >> "\$STATUS"
+  echo "[\$TIMESTAMP] WARNING: Dirty workspace detected. Running 3-phase cleanup." >> "\$STATUS"
+
+  # Phase 1: 恢复已追踪文件
   git checkout -- .
-  git clean -fd --exclude-from=.memento_cleanignore || true
+
+  # Phase 2: 清理未追踪文件（排除保护列表）
+  if [[ -f ".memento_cleanignore" ]]; then
+    git clean -fd --exclude-from=.memento_cleanignore
+  else
+    git clean -fd
+  fi
+
+  # Phase 3: 兜底——如果还是脏的，紧急 stash
+  if [[ -n \$(git status --porcelain) ]]; then
+    git stash --include-untracked -m "memento-emergency-stash-\$TIMESTAMP"
+    echo "[\$TIMESTAMP] CRITICAL: Emergency stash created. Manual inspection required." >> "\$STATUS"
+  fi
 fi
 
-if [[ -n \$(git status --porcelain) ]]; then
-  echo "[\$TIMESTAMP] CRITICAL: Workspace still dirty after cleanup. Emergency Stash (Phase 3)." >> "\$STATUS"
-  git stash --include-untracked -m "memento-emergency-stash-\$TIMESTAMP" || true
+# 日志轮转
+MAX_ENTRIES=\$(grep -oP 'status_max_entries:\s*\K\d+' "\$PLAN" || echo "50")
+CURRENT_ENTRIES=\$(grep -c '^\## \[' "\$STATUS" || true)
+if [[ \$CURRENT_ENTRIES -gt \$MAX_ENTRIES ]]; then
+  ARCHIVE_DIR="\$PROJECT_DIR/logs/status_archive"
+  mkdir -p "\$ARCHIVE_DIR"
+  mv "\$STATUS" "\$ARCHIVE_DIR/TICK_STATUS_\$(date +%Y%m%d_%H%M%S).md"
+  echo "# TICK STATUS LOG" > "\$STATUS"
+  echo "" >> "\$STATUS"
+  echo "<!-- Rotated at \$TIMESTAMP. Previous entries archived. -->" >> "\$STATUS"
+fi
+
+# 告警检测
+BLOCKED_COUNT=\$(grep -c '\[!\]' "\$PLAN" || true)
+CIRCUIT_BROKEN=\$(grep -c 'CIRCUIT BREAKER' "\$STATUS" || true)
+
+if [[ \$BLOCKED_COUNT -gt 0 || \$CIRCUIT_BROKEN -gt 0 ]]; then
+  cat > "\$PROJECT_DIR/.memento_alert" << EOF_INNER
+timestamp: \$TIMESTAMP
+blocked_tasks: \$BLOCKED_COUNT
+circuit_breaker: \$([[ \$CIRCUIT_BROKEN -gt 0 ]] && echo "TRIGGERED" || echo "OK")
+message: Pipeline needs attention. \$BLOCKED_COUNT task(s) blocked.
+EOF_INNER
+fi
+
+# 如果一切正常且之前有告警，清除告警
+if [[ \$BLOCKED_COUNT -eq 0 && \$CIRCUIT_BROKEN -eq 0 && -f "\$PROJECT_DIR/.memento_alert" ]]; then
+  rm -f "\$PROJECT_DIR/.memento_alert"
 fi
 ENGINE
 
