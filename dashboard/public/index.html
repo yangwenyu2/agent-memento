@@ -360,9 +360,6 @@
 
             // Auto-calculate if it's 0 (fallback for manual edits)
             if (total === 0 || isNaN(total)) {
-               
-            // Auto-calculate if it's 0 (fallback for manual edits)
-            if (total === 0 || isNaN(total)) {
                 total = (data.content.match(/-\s*\[([\s\S]?)\]/g) || []).filter(m => !m.includes(']]')).length;
                 done = (data.content.match(/-\s*\[[xX]\]/g) || []).length;
             }
