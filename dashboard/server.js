@@ -104,14 +104,46 @@ app.post('/api/chat', (req, res) => {
             const d = fs.readFileSync(tmpOut, 'utf8');
             let p = null;
 
-            // Simple robust regex: look for "payloads": [ { "text": "..." } ]
-            const m = d.match(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-            if (m) {
-                // unescape it
-                const unescaped = JSON.parse('"' + m[1] + '"');
-                p = { payloads: [{ text: unescaped }] };
-            } else {
-                throw new Error('Could not find text payload via regex.');
+            // Simple robust regex search: look for {"payloads":[{"text": ...}]} 
+            // Since there can be multiple huge JSON chunks from tracking, 
+            // instead of matching strings, we will just isolate EVERY valid { ... } and parse it looking for "payloads".
+            
+            p = { payloads: [{text: ""}] };
+            
+            // extract everything that looks like a JSON line containing payloads (often formatted nicely in --json)
+            try {
+                // Find all lines containing "payloads": [
+                const lines = d.split('\n');
+                let foundJsonText = "";
+                let inJson = false;
+                for (let line of lines) {
+                    if (line.trim().startsWith('{"meta":')) {
+                        inJson = true;
+                        foundJsonText = line; // maybe single line JSON?
+                        if (line.includes('"payloads":[') && !line.includes('"tools":[')) {
+                            // telemetry dumps usually contain "total":... or "metrics"... 
+                            // Standard output from agent usually has {"meta":{...},"payloads":[{"text":"...
+                            let parsed = JSON.parse(line);
+                            if(parsed.payloads && parsed.payloads[0].text) {
+                                p = parsed;
+                            }
+                        }
+                    }
+                }
+            } catch(ex) {
+                // fallback to regex
+            }
+
+            if (!p.payloads[0].text) {
+                // Hard regex fallback
+                let finalMatch = d.match(/"text"\s*:\s*"((?:\\.|[^"\\])*)"/g);
+                if (finalMatch && finalMatch.length > 0) {
+                    let lastStr = finalMatch[finalMatch.length - 1]; // usually the final output
+                    let theText = JSON.parse("{" + lastStr + "}").text;
+                    p.payloads[0].text = theText;
+                } else {
+                     throw new Error('Fallback regex regex failed to find text key.');
+                }
             } 
             
             // cleanup
