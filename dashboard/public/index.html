@@ -249,6 +249,35 @@
         ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #484f58; }
 
+    
+        /* Mobile Responsiveness */
+        @media (max-width: 900px) {
+            body {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto auto;
+                height: auto;
+                overflow-y: auto;
+            }
+            .hero-panel {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+                padding: 20px;
+            }
+            .hero-info {
+                flex-direction: column;
+                align-items: flex-start;
+                width: 100%;
+            }
+            .progress-wrapper {
+                width: 100%;
+                max-width: 100%;
+            }
+            .panel {
+                min-height: 400px;
+            }
+        }
+
     </style>
 </head>
 <body>
