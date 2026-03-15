@@ -102,13 +102,17 @@ app.post('/api/chat', (req, res) => {
     exec(cmd, { timeout: 120000, env }, (error, stdout, stderr) => {
         try {
             const d = fs.readFileSync(tmpOut, 'utf8');
-            const matchP = d.split('\n');
-            let jIdx = -1; 
-            for(let i=matchP.length-1; i>=0; i--) { 
-                if(matchP[i].includes('{"payloads"')) { jIdx = i; break; } 
+            let p = null;
+
+            // Simple robust regex: look for "payloads": [ { "text": "..." } ]
+            const m = d.match(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+            if (m) {
+                // unescape it
+                const unescaped = JSON.parse('"' + m[1] + '"');
+                p = { payloads: [{ text: unescaped }] };
+            } else {
+                throw new Error('Could not find text payload via regex.');
             } 
-            if(jIdx===-1) throw new Error('No payloads structure found in output'); 
-            const p = JSON.parse(matchP.slice(jIdx).join('\n')); 
             
             // cleanup
             fs.unlinkSync(tmpOut);
@@ -122,7 +126,6 @@ app.post('/api/chat', (req, res) => {
             try { rawLines = fs.readFileSync(tmpOut, 'utf8').split('\n').slice(-10); } catch(x){}
             res.json({ reply: '【系统桥接失败】\n' + rawLines.join('\n').substring(0,200), color: '#ff8a8a' });
         }
-    });
     });
 });
 
