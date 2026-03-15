@@ -11,13 +11,21 @@ const argv = minimist(process.argv.slice(2));
 const PROJECT_DIR = argv['project-dir'] ? path.resolve(argv['project-dir']) : path.resolve('../projects/demo');
 const PORT = argv['port'] || 3777;
 
+const ENABLE_PREVIEW = argv['enable-preview'] || false;
+const HOST = argv['host'] || '127.0.0.1'; // Default to localhost for security
+
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Mount the actual user project directory as a static preview path
-app.use('/preview', express.static(PROJECT_DIR));
+// Opt-in mount of the user project directory as a static preview path
+if (ENABLE_PREVIEW) {
+    app.use('/preview', express.static(PROJECT_DIR));
+} else {
+    app.use('/preview', (req, res) => res.status(403).send('Preview disabled for security. Start dashboard with --enable-preview to view.'));
+}
 
 
 // File paths
@@ -173,8 +181,8 @@ User Command: ${message}`;
 });
 
 // Create Server & WSS
-const server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🧠 Agent Memento Dashboard running at http://0.0.0.0:${PORT}`);
+const server = app.listen(PORT, HOST, () => {
+    console.log(`🧠 Agent Memento Dashboard running at http://${HOST}:${PORT}`);
     console.log(`📁 Watching project directory: ${PROJECT_DIR}`);
 });
 

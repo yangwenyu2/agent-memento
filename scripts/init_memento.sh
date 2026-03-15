@@ -176,9 +176,9 @@ if [[ -n $(git status --porcelain) ]]; then
   if [[ -f ".memento_cleanignore" ]]; then
     # 读取 ignore 文件并转换为 -e 选项
     EXCLUDES=$(awk '{printf "-e %s ", $0}' .memento_cleanignore)
-    git clean -fd $EXCLUDES
+    git stash push -m "memento-untracked-cleanup-$TIMESTAMP" -u $EXCLUDES
   else
-    git clean -fd
+    git stash push -m "memento-untracked-cleanup-$TIMESTAMP" -u
   fi
 
   # Phase 3: 兜底——如果还是脏的，紧急 stash

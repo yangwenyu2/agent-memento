@@ -1,3 +1,16 @@
+---
+clawdbot:
+  emoji: 🧠
+  requires:
+    bins:
+      - bash
+      - openclaw
+      - node
+      - npm
+      - git
+    env: []
+---
+
 # Agent Memento v0.2 — Complete Skill Specification
 
 ```markdown
