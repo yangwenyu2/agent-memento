@@ -29,6 +29,8 @@ cat << 'PLAN' > "$PROJECT_DIR/docs/MASTER_PLAN.md"
 - circuit_breaker_threshold: 5 <!-- 连续失败多少次触发熔断 -->
 - clean_strategy: git-clean <!-- git-clean | snapshot | docker -->
 - clean_ignore: .memento_cleanignore
+- status_max_entries: 50    <!-- TICK_STATUS.md 最大条目数，超出自动归档 -->
+- status_archive_dir: logs/status_archive/
 - total_ticks: 0           <!-- 自动递增的 Tick 计数器 -->
 - total_tasks: 0           <!-- 自动维护 -->
 - completed_tasks: 0       <!-- 自动维护 -->
@@ -170,8 +172,8 @@ acquire_lock
 # Call the LLM
 openclaw agent --local --json --session-id "memento-\$(basename "\$PROJECT_DIR")" \
   --system-prompt-file "$PROJECT_DIR/scripts/tick_worker_system_prompt.md" \
-  --prompt "Read \$PLAN, locate the first executable task following the phase dependence and task retries logic, complete it, and update the tick status in \$STATUS. Then perform the Verify step and act strictly based on the exit code. If failed, rollback using git checkout and increment retries in the plan." \
-  --context-files "\$PLAN" "\$PROJECT_DIR/docs/PROJECT_MAP.md" "\$PROJECT_DIR/docs/HUMAN_NOTES.md" \
+  --prompt "Read $PLAN, locate the first executable task following the phase dependence and task retries logic, complete it, and update the tick status in $STATUS. Then perform the Verify step and act strictly based on the exit code. If failed, rollback using git checkout and increment retries in the plan." \
+  --context-files "$PLAN" "$PROJECT_DIR/docs/PROJECT_MAP.md" "$PROJECT_DIR/docs/HUMAN_NOTES.md" \
   2>&1 | tee -a "\$TICK_LOG"
 
 release_lock
