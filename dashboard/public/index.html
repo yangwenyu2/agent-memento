@@ -357,6 +357,10 @@
             let total = matchTotal ? parseInt(matchTotal[1]) : 0;
             let done = matchDone ? parseInt(matchDone[1]) : 0;
             let tickCount = matchTick ? matchTick[1] : '--';
+            if (done > 0 && String(tickCount) !== String(done) && total > 0 && done === total) {
+                // if it's 100% complete, force tick count to max
+                tickCount = done;
+            }
 
             // Regex parsing fallback. Sometimes Bash counts fail and write completed_tasks: 0 even if we have [x]!
             // Let's forcefully recalculate from the raw markdown if the header counts seem anomalously low (0)
