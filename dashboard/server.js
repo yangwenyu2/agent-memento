@@ -108,17 +108,19 @@ ${planData}
 
 User Command: ${message}`;
     
-    const env = { ...process.env, ARCHITECT_PROMPT: prompt };
-    
-    
     const tmpOut = path.join(require('os').tmpdir(), 'arch_out_' + Date.now() + '.json');
     const cmdFiles = path.join(require('os').tmpdir(), 'arch_prompt_' + Date.now() + '.txt');
     fs.writeFileSync(cmdFiles, prompt);
     
+    // For security compliance: 
+    // DO NOT spread process.env to the child agent to prevent AWS/GCP credential leakage. 
+    // We only pass the bare minimum PATH needed to run openclaw.
+    const secureEnv = { PATH: process.env.PATH || '/usr/bin:/bin:/usr/local/bin' };
+
     // Run it, and write all stdout to tmpOut
     const cmd = `openclaw agent --local --json --session-id "${sessionName}" -m "\$(cat ${cmdFiles})" > ${tmpOut} 2>&1`;
 
-    exec(cmd, { timeout: 120000, env }, (error, stdout, stderr) => {
+    exec(cmd, { timeout: 120000, env: secureEnv }, (error, stdout, stderr) => {
         try {
             const d = fs.readFileSync(tmpOut, 'utf8');
             let p = null;
