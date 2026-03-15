@@ -21,6 +21,14 @@ A tick-driven autonomous execution framework that turns any LLM into a reliable 
 > Inspired by the film *Memento*: if you can't form new memories, 
 > tattoo the instructions on your body.
 
+
+> ⚠️ **Security & Risk Warning**:
+> This skill deploys a highly privileged autonomous pipeline. Please read carefully before initializing:
+> 1. **Destructive Auto-Cleanup**: The core Tick Engine (`memento_tick.sh`) strictly enforces workspace cleanliness. On failure, it executes `git clean -fd` and `git checkout -- .`. This **WILL PERMANENTLY DELETE** any untracked files not explicitly protected by `.memento_cleanignore`. **Never initialize Memento in a directory containing pre-existing valuable files**.
+> 2. **HTTP Directory Background Exposure**: The companion Dashboard runs a Node.js web server (default port 3777) that statically mounts and serves your entire project directory via the `/preview` endpoint. **Do not place API keys, secrets, or sensitive private files in the project directory**, as they will be accessible to anyone who can reach the dashboard's IP/port.
+> 3. **Autonomous Execution**: This agent runs in the background (via cron or loop), edits files, performs git commits, and executes arbitrary `verify` bash commands without asking for your per-action consent.
+
+
 ## The Problem
 
 Every AI coding agent hits the same wall:
