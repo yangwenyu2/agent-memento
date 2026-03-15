@@ -27,58 +27,103 @@
             padding: 20px;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            grid-template-rows: auto 1fr;
+            grid-template-rows: auto auto 1fr;
             gap: 20px;
             height: 100vh;
         }
 
-        .header {
+        /* Hero Progress Bar */
+        .hero-panel {
             grid-column: 1 / -1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
             background-color: var(--panel-bg);
             border: 1px solid var(--border-color);
             border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .title {
+        .hero-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex: 1;
+        }
+
+        .hero-title {
+            font-size: 1.5rem;
+            font-weight: bold;
             margin: 0;
-            font-size: 1.2rem;
+            padding-right: 20px;
+            border-right: 1px solid var(--border-color);
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .status-badge {
-            padding: 4px 10px;
-            border-radius: 20px;
+        .progress-wrapper {
+            flex: 1;
+            max-width: 600px;
+        }
+
+        .progress-text {
             font-size: 0.85rem;
-            font-weight: 600;
+            color: #8b949e;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .progress-bar-bg {
+            height: 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2ea043, #3fb950);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
-        .status-badge::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; opacity: 0.8; }
+        .status-badge::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 50%; opacity: 0.8; }
         .status-badge.auto { background: rgba(46,160,67,0.15); color: var(--success-color); border: 1px solid rgba(46,160,67,0.4); }
-        .status-badge.auto::before { background: var(--success-color); box-shadow: 0 0 8px var(--success-color); animation: pulse 2s infinite; }
+        .status-badge.auto::before { background: var(--success-color); box-shadow: 0 0 10px var(--success-color); animation: pulse 2s infinite; }
         .status-badge.paused { background: rgba(210,153,34,0.15); color: var(--warning-color); border: 1px solid rgba(210,153,34,0.4); }
         .status-badge.paused::before { background: var(--warning-color); }
         .status-badge.stopped { background: rgba(248,81,73,0.15); color: var(--error-color); border: 1px solid rgba(248,81,73,0.4); }
         .status-badge.stopped::before { background: var(--error-color); }
 
         @keyframes pulse {
-            0% { transform: scale(0.95); opacity: 0.5; }
-            50% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(0.95); opacity: 0.5; }
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
         }
 
         .controls button {
             background-color: #21262d;
             border: 1px solid var(--border-color);
             color: var(--text-color);
-            padding: 6px 14px;
+            padding: 8px 16px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
@@ -102,7 +147,8 @@
             padding: 12px 16px;
             background-color: rgba(255,255,255,0.02);
             border-bottom: 1px solid var(--border-color);
-            font-weight: 600;
+            font-weight: bold;
+            font-size: 0.95rem;
             display: flex;
             justify-content: space-between;
         }
@@ -113,30 +159,34 @@
             flex: 1;
             font-family: var(--font-mono);
             font-size: 13px;
-            line-height: 1.5;
+            line-height: 1.6;
             white-space: pre-wrap;
         }
 
         /* Syntax Highlighting for Markdown */
-        .md-h1, .md-h2 { color: #fff; font-weight: bold; margin-top: 15px; margin-bottom: 5px; }
-        .md-h1 { font-size: 1.2em; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
-        .md-h2 { color: var(--accent-color); }
-        .md-task-done { color: var(--success-color); }
+        .md-meta { color: #8b949e; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; margin-bottom: 15px; }
+        .md-h1, .md-h2 { color: #fff; font-weight: bold; margin-top: 15px; margin-bottom: 8px; }
+        .md-h1 { font-size: 1.3em; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; color: var(--accent-color); }
+        .md-h2 { font-size: 1.1em; color: #a5d6ff; }
+        .md-task-done { color: var(--success-color); padding: 2px 0; }
         .md-task-pending { color: #8b949e; }
-        .md-task-blocked { color: var(--error-color); font-weight: bold; }
-        .md-task-working { color: var(--warning-color); }
+        .md-task-blocked { color: #ff7b72; font-weight: bold; background: rgba(248,81,73,0.1); padding: 2px 6px; border-radius: 4px; display: inline-block; }
+        .md-task-working { color: var(--warning-color); font-weight: bold; }
 
         /* Chat Panel */
         #chat-history {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
 
         .chat-msg {
-            padding: 10px 14px;
+            padding: 12px 16px;
             border-radius: 8px;
             max-width: 85%;
+            line-height: 1.5;
+            font-family: -apple-system, sans-serif;
+            font-size: 0.95rem;
         }
         .chat-user {
             align-self: flex-end;
@@ -160,27 +210,28 @@
         }
         .chat-input-area input {
             flex: 1;
-            padding: 10px;
+            padding: 12px;
             border-radius: 6px;
             border: 1px solid var(--border-color);
             background: #0d1117;
             color: #fff;
             outline: none;
+            font-size: 14px;
         }
         .chat-input-area input:focus { border-color: var(--accent-color); }
         .chat-input-area button {
-            padding: 0 20px;
+            padding: 0 24px;
             border-radius: 6px;
             border: none;
             background: var(--accent-color);
-            color: #fff;
+            color: #000;
             font-weight: bold;
             cursor: pointer;
+            transition: 0.2s;
         }
         .chat-input-area button:hover { background: #79c0ff; }
-        .chat-input-area button:disabled { background: #30363d; cursor: not-allowed; }
+        .chat-input-area button:disabled { background: #30363d; color: #8b949e; cursor: not-allowed; }
 
-        /* Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
@@ -189,10 +240,27 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1 class="title">🧠 Agent Memento Dashboard <span id="sync-icon">📡</span></h1>
+
+    <!-- Hero Progress Bar -->
+    <div class="hero-panel">
+        <div class="hero-info">
+            <h1 class="hero-title">
+                🧠 Agent Memento
+                <span id="sync-icon" style="opacity:0.3; margin-left:8px; font-size:1.2rem;">📡</span>
+            </h1>
+            <div class="progress-wrapper">
+                <div class="progress-text">
+                    <strong id="completion-text">--% (0/0 tasks)</strong>
+                    <span id="tick-ticker">Tick #-- | Next check in --s</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="main-progress"></div>
+                </div>
+            </div>
+        </div>
+        
         <div class="controls">
-            <span id="badge-status" class="status-badge stopped">Stopped</span>
+            <span id="badge-status" class="status-badge stopped">STOPPED</span>
             <button id="btn-auto" onclick="setMode('auto')">▶ Resume</button>
             <button id="btn-paused" onclick="setMode('paused')">⏸ Pause</button>
             <button id="btn-stopped" onclick="setMode('stopped')">⏹ Stop</button>
@@ -208,19 +276,19 @@
     <!-- Tick Timeline -->
     <div class="panel">
         <div class="panel-header">⏱ TICK TIMELINE</div>
-        <div class="panel-body" id="timeline-content">Loading...</div>
+        <div class="panel-body" id="timeline-content" style="color: #c9d1d9;">Loading...</div>
     </div>
 
-    <!-- Human Notes & Architect Chat -->
+    <!-- Architect Chat -->
     <div class="panel" style="grid-column: 1 / -1; grid-row: 3; height: 350px;">
         <div class="panel-header">💬 Architect Desk (交互指挥台)</div>
-        <div class="panel-body" style="padding: 0; display: flex; flex-direction: column; overflow: hidden;">
+        <div class="panel-body" style="padding: 0; display: flex; flex-direction: column; overflow: hidden; font-family: sans-serif;">
             <div id="chat-history" style="flex:1; overflow-y:auto; padding: 16px;">
-                <div class="chat-msg chat-agent" style="color:#d29922">【系统】指挥台已联通。可以直接在这里下达指令修改 MASTER_PLAN 或询问项目状态。</div>
+                <div class="chat-msg chat-agent" style="color:#d29922; font-family: monospace;">【控制台联通】您可以直接对 Architect 说"重置 T-103 的重试次数"或"调整第三阶段方案"。本地主循环将接管指令。</div>
             </div>
             <div class="chat-input-area">
-                <input type="text" id="chat-input" placeholder="输入指令，例如：把 T-101 拆成两步..." onkeypress="if(event.key === 'Enter') sendChat()">
-                <button id="chat-btn" onclick="sendChat()">发送 Send</button>
+                <input type="text" id="chat-input" placeholder="输入指令告诉主 Architect (例如：重置所有被 BLOCK 的进度)..." onkeypress="if(event.key === 'Enter') sendChat()">
+                <button id="chat-btn" onclick="sendChat()">Send</button>
             </div>
         </div>
     </div>
@@ -234,16 +302,37 @@
             const data = await res.json();
             
             // Extract Mode
-            const match = data.content.match(/tick_mode:\s*(\w+)/);
-            if (match) updateHeaderMode(match[1]);
+            const matchMode = data.content.match(/tick_mode:\s*(\w+)/);
+            if (matchMode) updateHeaderMode(matchMode[1]);
+
+            // Update Progress Bar
+            const matchTotal = data.content.match(/total_tasks:\s*(\d+)/);
+            const matchDone = data.content.match(/completed_tasks:\s*(\d+)/);
+            const matchTick = data.content.match(/total_ticks:\s*(\d+)/);
+            
+            let total = matchTotal ? parseInt(matchTotal[1]) : 0;
+            let done = matchDone ? parseInt(matchDone[1]) : 0;
+            let tickCount = matchTick ? matchTick[1] : '--';
+
+            // Auto-calculate if it's 0 (fallback for manual edits)
+            if (total === 0) {
+                total = (data.content.match(/- \[[x ~!]\]|- \[ \]/g) || []).length;
+                done = (data.content.match(/- \[x\]/g) || []).length;
+            }
+
+            const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+            document.getElementById('completion-text').innerText = `${pct}% (${done}/${total} tasks)`;
+            document.getElementById('main-progress').style.width = `${pct}%`;
+            document.getElementById('tick-ticker').innerText = `Tick #${tickCount} | Waiting for cron`;
 
             // Simple Markdown highlight
             let html = data.content
                 .replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                .replace(/(## Meta[\s\S]*?)(## |$)/, "<div class='md-meta'>$1</div>$2")
                 .replace(/^# (.*)/gm, "<div class='md-h1'># $1</div>")
                 .replace(/^## (.*)/gm, "<div class='md-h2'>## $1</div>")
-                .replace(/- \[x\](.*)/gm, "<div class='md-task-done'>✅ [x]$1</div>")
-                .replace(/- \[\!\](.*)/gm, "<div class='md-task-blocked'>❌ [!]$1</div>")
+                .replace(/- \[[xX]\](.*)/gm, "<div class='md-task-done'>✅ [x]$1</div>")
+                .replace(/- \[\!\](.*)/gm, "<div class='md-task-blocked'>🚫 [!]$1</div>")
                 .replace(/- \[\~\](.*)/gm, "<div class='md-task-working'>⏳ [~]$1</div>")
                 .replace(/- \[ \](.*)/gm, "<div class='md-task-pending'>⬜ [ ]$1</div>");
                 
@@ -253,7 +342,17 @@
         async function fetchTimeline() {
             const res = await fetch(`${API_URL}/api/status`);
             const data = await res.json();
-            document.getElementById('timeline-content').innerText = data.content;
+            
+            // Format log colors
+            let html = data.content
+                .replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                .replace(/✅ SUCCESS/g, "<span style='color:var(--success-color);font-weight:bold;'>✅ SUCCESS</span>")
+                .replace(/❌ FAILED/g, "<span style='color:var(--error-color);font-weight:bold;'>❌ FAILED</span>")
+                .replace(/🚫 BLOCKED/g, "<span style='color:#ff7b72;background:rgba(248,81,73,0.2);padding:0 4px;border-radius:3px;font-weight:bold;'>🚫 BLOCKED</span>")
+                .replace(/^## \[(.*?)\] (.*)/gm, "<div style='color:var(--accent-color);font-size:1.1em;font-weight:bold;margin-top:16px;border-bottom:1px solid var(--border-color);padding-bottom:4px;'>[$1] $2</div>")
+                .replace(/- \*\*Task\*\*: (.*)/g, "<div style='color:#fff;margin-top:4px;'>- <b>Task</b>: $1</div>");
+                
+            document.getElementById('timeline-content').innerHTML = html;
         }
 
         function updateHeaderMode(mode) {
@@ -276,7 +375,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ mode })
             });
-            // optimistic update
+            // optimistic
             updateHeaderMode(mode);
         }
 
@@ -312,7 +411,7 @@
                 const data = await res.json();
                 appendMsg('agent', data.reply, data.color);
             } catch(e) {
-                appendMsg('agent', "【网络连接断开】", "#ff8a8a");
+                appendMsg('agent', "【网络连接断开】无法呼叫本地主干。", "#ff8a8a");
             } finally {
                 input.disabled = false;
                 btn.disabled = false;
