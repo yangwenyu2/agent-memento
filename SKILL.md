@@ -710,7 +710,7 @@ You have no memory of previous ticks. You start fresh every time.
    - Find the first task marked `[ ]` with `retries < max_retries`.
 4. If no executable task found:
    - If all tasks are `[x]`/`[-]`: write "🎉 ALL TASKS COMPLETE" to TICK_STATUS.md.
-   - If any `[!小]` exists: write "⚠️ PIPELINE BLOCKED" to TICK_STATUS.md.
+   - If any `[!]` exists: write "⚠️ PIPELINE BLOCKED" to TICK_STATUS.md.
    - Exit.
 5. Mark the target task `[~]` in MASTER_PLAN.md.
 6. Read `docs/PROJECT_MAP.md` for module context.
