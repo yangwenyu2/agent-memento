@@ -145,8 +145,8 @@ fi
 
 
 # Pre-Tick Meta Update
-TOTAL_TASKS=$(grep -cE "^- \[[ x~!]\]" "$PLAN")
-COMPLETED_TASKS=$(grep -cE "^- \[x\]" "$PLAN")
+TOTAL_TASKS=$(grep -c '^- \[' "$PLAN" || true)
+COMPLETED_TASKS=$(grep -c '^- \[x\]' "$PLAN" || true)
 sed -i "s/^total_tasks: .*/total_tasks: $TOTAL_TASKS/" "$PLAN"
 sed -i "s/^completed_tasks: .*/completed_tasks: $COMPLETED_TASKS/" "$PLAN"
 
