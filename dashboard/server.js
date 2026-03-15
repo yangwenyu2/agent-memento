@@ -78,27 +78,50 @@ app.post('/api/chat', (req, res) => {
     const message = req.body.message || '';
     if (!message) return res.status(400).json({ error: 'empty message' });
 
-    const escapedMessage = JSON.stringify(message).slice(1, -1).replace(/"/g, '\\\"'); // raw string
     const sessionName = `memento-dashboard-${path.basename(PROJECT_DIR)}`;
     
-    // Pass the MASTER_PLAN directly as system prompt or prepended message so the model knows it is an Architect
-    const systemPrompt = `You are the Architect of a Memento autonomous project. You reside in the Dashboard. The user is talking to you to steer the project. Here is the current MASTER_PLAN.md state:\n\n`;
+    // Instead of passing everything via a fragile bash command line string, we rely on the JS process.env
+    const planData = fs.existsSync(PLAN_PATH) ? fs.readFileSync(PLAN_PATH, 'utf-8') : '';
     
-    const cmd = `bash -lc "export PLAN_DATA=\$(cat \"${PLAN_PATH}\") && openclaw agent --local --json --session-id ${sessionName} -m \"${systemPrompt}\$PLAN_DATA\n\nUser Command: ${escapedMessage}\" 2>/dev/null"`;
+    const prompt = `You are the Architect of a Memento autonomous project. You reside in the Dashboard. The user is talking to you to steer the project. Here is the current MASTER_PLAN.md state:\n\n${planData}\n\nUser Command: ${message}`;
     
-    exec(cmd, { timeout: 120000, env: process.env }, (error, stdout, stderr) => {
+    const env = { ...process.env, ARCHITECT_PROMPT: prompt };
+    
+    const cmd = `openclaw agent --local --json --session-id "${sessionName}" -m "$ARCHITECT_PROMPT" 2>/dev/null`;
+    
+    exec(cmd, { timeout: 120000, env }, (error, stdout, stderr) => {
         if (error) {
             console.error("OpenClaw error:", error);
             // sometimes it throws error but still outputs stdout
             if (!stdout.trim()) {
-                return res.json({ reply: `【错误】无法唤醒模型：${error.message}`, color: '#ff8a8a' });
+                return res.json({ reply: `【系统异常】执行桥接通信失败：${error.message}`, color: '#ff8a8a' });
             }
         }
         
         try {
-            // Find the { ... } JSON payload if there's arbitrary text before it
-            const match = stdout.match(/\{.*\}/s);
-            const jsonText = match ? match[0] : stdout.trim();
+            // Some plugins output verbose logs to stdout even with --json
+            // which breaks parsing. We need to extract the LAST {...} object.
+            let jsonText = '';
+            const match = stdout.match(/\{[\s\S]*\}/);
+            if (match) {
+                // If there are multiple JSON-like blocks, taking the whole match might fail parsed
+                // A safer way is to find the last occurrence of {"payloads"
+                const lines = stdout.split('\n');
+                let startIndex = -1;
+                for(let i=lines.length-1; i>=0; i--) {
+                    if(lines[i].includes('{"payloads"')) {
+                        startIndex = i;
+                        break;
+                    }
+                }
+                if(startIndex !== -1) {
+                    jsonText = lines.slice(startIndex).join('\n');
+                } else {
+                     jsonText = match[0];
+                }
+            } else {
+                jsonText = stdout.trim();
+            }
             const payload = JSON.parse(jsonText || '{}');
             const texts = payload.payloads || [];
             let reply = texts[0]?.text || '【系统】模型已执行，但无文本输出。';
