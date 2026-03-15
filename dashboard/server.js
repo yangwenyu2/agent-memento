@@ -4,7 +4,7 @@ const chokidar = require('chokidar');
 const path = require('path');
 const fs = require('fs');
 const { WebSocketServer } = require('ws');
-const { exec } = require('child_process');
+const { exec, execFile } = require('child_process');
 const minimist = require('minimist');
 
 const argv = minimist(process.argv.slice(2));
@@ -118,9 +118,17 @@ User Command: ${message}`;
     const secureEnv = { PATH: process.env.PATH || '/usr/bin:/bin:/usr/local/bin' };
 
     // Run it, and write all stdout to tmpOut
-    const cmd = `openclaw agent --local --json --session-id "${sessionName}" -m "\$(cat ${cmdFiles})" > ${tmpOut} 2>&1`;
+    // Using execFile with bash to prevent variable injection from user strings
+    const cmdArgs = [
+        '-c',
+        `openclaw agent --local --json --session-id "$1" -m "$(cat "$2")" > "$3" 2>&1`,
+        '--',
+        sessionName,
+        cmdFiles,
+        tmpOut
+    ];
 
-    exec(cmd, { timeout: 120000, env: secureEnv }, (error, stdout, stderr) => {
+    execFile('bash', cmdArgs, { timeout: 120000, env: secureEnv }, (error, stdout, stderr) => {
         try {
             const d = fs.readFileSync(tmpOut, 'utf8');
             let p = null;
