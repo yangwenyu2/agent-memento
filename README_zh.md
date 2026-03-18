@@ -4,6 +4,8 @@
 
 <img src="./assets/banner.png" alt="Agent Memento Banner" width="100%">
 
+<img src="./assets/Agent Memento.jpg" alt="Agent Memento Banner" width="100%">
+
 # 🧠 Agent Memento
 
 **面向大模型的“记碎式”自动化生产兵工厂**
