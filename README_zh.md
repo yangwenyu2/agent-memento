@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="./docs/banner.png" alt="Agent Memento Banner" width="100%">
+<img src="./assets/banner.png" alt="Agent Memento Banner" width="100%">
 
 # 🧠 Agent Memento
 
