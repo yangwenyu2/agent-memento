@@ -3,7 +3,6 @@
 
 <img src="./assets/banner.png" alt="Agent Memento Banner" width="100%">
 
-<img src="./assets/Agent Memento.jpg" alt="Agent Memento Banner" width="100%">
 
 # 🧠 Agent Memento
 
